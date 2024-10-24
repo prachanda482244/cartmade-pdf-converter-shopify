@@ -33,7 +33,6 @@ const convertImageToDataUrl = (image: any) => {
   canvas.width = image.width;
   canvas.height = image.height;
 
-  // Create an ImageData object from the image data
   const imageData = new ImageData(
     new Uint8ClampedArray(image.data),
     image.width,
