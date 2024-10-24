@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://admitted-distinguished-offline-some.trycloudflare.com"
+application_url = "https://judge-copyrights-gifts-orbit.trycloudflare.com"
 embedded = true
 
 [build]
@@ -16,9 +16,9 @@ scopes = ""
 
 [auth]
 redirect_urls = [
-  "https://admitted-distinguished-offline-some.trycloudflare.com/auth/callback",
-  "https://admitted-distinguished-offline-some.trycloudflare.com/auth/shopify/callback",
-  "https://admitted-distinguished-offline-some.trycloudflare.com/api/auth/callback"
+  "https://judge-copyrights-gifts-orbit.trycloudflare.com/auth/callback",
+  "https://judge-copyrights-gifts-orbit.trycloudflare.com/auth/shopify/callback",
+  "https://judge-copyrights-gifts-orbit.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
