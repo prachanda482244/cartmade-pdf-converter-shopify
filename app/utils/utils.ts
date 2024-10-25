@@ -1,44 +1,41 @@
-import { getDocument } from "pdfjs-dist/";
-import * as pdfjsLib from "pdfjs-dist";
+import poppler from "pdf-poppler";
+import path from "path";
+import fs from "fs";
 
-export const extractImagesFromPDF = async (pdfBytes: any) => {
-  const loadingTask = getDocument({ data: pdfBytes });
-  const pdf = await loadingTask.promise;
-  const numPages = pdf.numPages;
-  const images = [];
+export const extractImagesFromPDF = async (
+  pdfPath: string,
+): Promise<string[]> => {
+  const outputDir = path.dirname(pdfPath);
+  const outputPrefix = path.basename(pdfPath, path.extname(pdfPath));
+  const outputFormat = "jpeg";
 
-  for (let i = 1; i <= numPages; i++) {
-    const page = await pdf.getPage(i);
+  const options = {
+    format: outputFormat,
+    out_dir: outputDir,
+    out_prefix: outputPrefix,
+    page: null,
+  };
 
-    const operatorList = await page.getOperatorList();
-    for (let j = 0; j < operatorList.fnArray.length; j++) {
-      if (operatorList.fnArray[j] === pdfjsLib.OPS.paintImageXObject) {
-        const imageName = operatorList.argsArray[j][0];
-        const image = await page.commonObjs.get(imageName);
-        if (image) {
-          const imgDataUrl = convertImageToDataUrl(image);
-          images.push(imgDataUrl);
-        }
-      }
-    }
+  try {
+    await poppler.convert(pdfPath, options);
+
+    const imageFiles = fs
+      .readdirSync(outputDir)
+      .filter((file) => {
+        return file.startsWith(outputPrefix);
+      }) //&& file.endsWith(`.${outputFormat}`)
+      .map((file) => path.join(outputDir, file));
+
+    const base64Images = await Promise.all(
+      imageFiles.slice(0, -1).map(async (filePath) => {
+        const imageBuffer = await fs.promises.readFile(filePath);
+        return `data:image/${outputFormat};base64,${imageBuffer.toString("base64")}`;
+      }),
+    );
+
+    return base64Images;
+  } catch (error) {
+    console.error("Error converting PDF to images:", error);
+    throw new Error("PDF conversion failed");
   }
-
-  return images;
-};
-
-const convertImageToDataUrl = (image: any) => {
-  const canvas = document.createElement("canvas");
-  const context = canvas.getContext("2d");
-
-  canvas.width = image.width;
-  canvas.height = image.height;
-
-  const imageData = new ImageData(
-    new Uint8ClampedArray(image.data),
-    image.width,
-    image.height,
-  );
-  if (!context) return;
-  context.putImageData(imageData, 0, 0);
-  return canvas.toDataURL("image/png");
 };

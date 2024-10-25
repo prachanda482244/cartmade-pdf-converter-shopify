@@ -1,56 +1,56 @@
-import { ActionFunctionArgs } from "@remix-run/node";
-import { Form, json, useActionData } from "@remix-run/react";
-import { PDFDocument, rgb, PDFName } from "pdf-lib";
-import { writeFile } from "fs/promises";
 import path from "path";
-import { authenticate } from "app/shopify.server";
-import { ActionPDFData } from "app/types/types";
-import { useState } from "react";
-import { Spinner } from "@shopify/polaris";
+import { ActionFunctionArgs, json } from "@remix-run/node";
 import { extractImagesFromPDF } from "app/utils/utils";
+import { motion } from "framer-motion";
+import fs from "fs";
+import { Form, useActionData } from "@remix-run/react";
+import { useState } from "react";
+import PageFlip from "./app.pageflip";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const { shop } = session;
   const formData = await request.formData();
   const pdfFile = formData.get("pdf") as File;
 
-  if (pdfFile && pdfFile.type === "application/pdf") {
-    const pdfBytes = await pdfFile.arrayBuffer();
-    const images = await extractImagesFromPDF(pdfBytes);
-
-    return json({
-      images,
-    });
+  if (!pdfFile || pdfFile.type !== "application/pdf") {
+    return json({ error: "Invalid PDF file." }, { status: 400 });
   }
 
-  return json({ error: "Invalid PDF file." }, { status: 400 });
+  const tempDir = path.join("C:", "tmp");
+  const tempPath = path.join(tempDir, pdfFile.name);
+
+  await fs.promises.mkdir(tempDir, { recursive: true });
+
+  await fs.promises.writeFile(
+    tempPath,
+    Buffer.from(await pdfFile.arrayBuffer()),
+  );
+
+  const images = await extractImagesFromPDF(tempPath);
+
+  await fs.promises.unlink(tempPath);
+
+  return json({ images });
 };
 
 const PDFConverter = () => {
-  const actionData: any = useActionData<ActionPDFData>();
-  console.log(actionData);
+  const actionData = useActionData<any>();
+
   return (
-    <div>
-      <h2>PDF Converter</h2>
-      <Form method="post" encType="multipart/form-data">
+    <div className="flex flex-col items-center w-full min-h-screen bg-gray-100 space-y-8 p-4">
+      <h2 className="text-4xl font-bold mb-8">PDF to Image Converter</h2>
+
+      <Form method="post" encType="multipart/form-data" className="mb-8">
         <input type="file" name="pdf" accept="application/pdf" required />
-        <br />
-        <br />
-        <button type="submit">Submit</button>
+        <button
+          type="submit"
+          className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded mt-4"
+        >
+          Submit
+        </button>
       </Form>
 
-      {actionData?.images?.length > 0 && (
-        <div>
-          <h3>Extracted Images</h3>
-          {actionData.images.map((imgSrc: any, index: number) => (
-            <img
-              key={index}
-              src={imgSrc}
-              alt={`Extracted Image ${index + 1}`}
-            />
-          ))}
-        </div>
+      {actionData?.images && actionData && (
+        <PageFlip images={actionData?.images} />
       )}
     </div>
   );
