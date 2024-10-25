@@ -5,7 +5,7 @@ const PageFlip = ({ images }: { images: string[] }) => {
   const [currentPage, setCurrentPage] = useState(0);
   const [animate, setAnimate] = useState(false);
   const [markers, setMarkers] = useState<
-    { x: number; y: number; product: any }[]
+    { x: number; y: number; imageIndex: number; product: string }[]
   >([]);
 
   const handleNextPage = () => {
@@ -30,6 +30,7 @@ const PageFlip = ({ images }: { images: string[] }) => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
+    // Open the Shopify Resource Picker
     const selected = await shopify.resourcePicker({
       type: "product",
       multiple: true,
@@ -39,15 +40,16 @@ const PageFlip = ({ images }: { images: string[] }) => {
         draft: false,
       },
     });
-    if (!selected?.length) return;
-    if (selected.length > 0) {
+
+    if (!selected) return;
+    if (selected?.length > 0) {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
-        { x, y, product: "selected" },
+        { x, y, imageIndex, product: selected[0].title },
       ]);
     }
   };
-
+  console.log(markers);
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <div className="relative w-[900px] h-[550px] perspective-1000">
@@ -62,33 +64,55 @@ const PageFlip = ({ images }: { images: string[] }) => {
           style={{ transformOrigin: "right center" }}
           onAnimationComplete={() => setAnimate(false)}
         >
-          {images.map((image, index) => (
-            <img
-              key={index}
-              src={image}
-              alt={`Page ${index + 1}`}
-              className={`w-full h-full object-cover rounded-lg ${index === currentPage ? "rounded-tl-lg rounded-bl-lg" : "rounded-tr-lg rounded-br-lg"}`}
-              onClick={(event) => handleImageMarker(event, index)}
-            />
-          ))}
-          {/* Render markers on the images */}
-          {markers.map((marker, index) => (
-            <div
-              key={index}
-              className="absolute"
-              style={{
-                left: marker.x,
-                top: marker.y,
-                transform: "translate(-50%, -50%)", // Center the marker
-              }}
-            >
-              <div className="bg-blue-500 w-2 h-2 rounded-full" />{" "}
-              {/* Marker */}
-              <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 text-xs text-white bg-black p-1 rounded">
-                {marker.product.title} {/* Display selected product title */}
+          <img
+            src={images[currentPage]}
+            alt={`Page ${currentPage + 1}`}
+            className="w-full h-full object-cover rounded-tl-lg rounded-bl-lg"
+            onClick={(event) => handleImageMarker(event, currentPage)}
+          />
+          <img
+            src={
+              currentPage + 1 < images.length
+                ? images[currentPage + 1]
+                : images[currentPage]
+            }
+            alt={`Page ${currentPage + 2}`}
+            className="w-full h-full object-cover rounded-tr-lg rounded-br-lg"
+            onClick={(event) => handleImageMarker(event, currentPage + 1)}
+          />
+          {markers.map((marker, index) =>
+            marker.imageIndex === currentPage ? (
+              <div
+                key={index}
+                className="absolute"
+                style={{
+                  left: marker.x,
+                  top: marker.y,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <div className="bg-blue-500 w-2 h-2 rounded-full" />
+                <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 text-xs text-white bg-black p-1 rounded">
+                  {marker.product}
+                </div>
               </div>
-            </div>
-          ))}
+            ) : marker.imageIndex === currentPage + 1 ? (
+              <div
+                key={index}
+                className="absolute"
+                style={{
+                  left: marker.x,
+                  top: marker.y,
+                  transform: "translate(-50%, -50%)",
+                }}
+              >
+                <div className="bg-blue-500 w-2 h-2 rounded-full" />
+                <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 text-xs text-white bg-black p-1 rounded">
+                  {marker.product}
+                </div>
+              </div>
+            ) : null,
+          )}
         </motion.div>
       </div>
 
