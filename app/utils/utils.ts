@@ -1,13 +1,46 @@
 import poppler from "pdf-poppler";
 import path from "path";
-import fs from "fs";
+import fs from "fs/promises";
+import axios from "axios";
+
+// export const extractImagesFromPDFS = async (
+//   pdfPath: string,
+// ): Promise<string[]> => {
+//   const outputDir = path.dirname(pdfPath);
+//   const outputPrefix = path.basename(pdfPath, path.extname(pdfPath));
+//   const outputFormat = "png";
+
+//   const options = {
+//     format: outputFormat,
+//     out_dir: outputDir,
+//     out_prefix: outputPrefix,
+//     page: null,
+//   };
+
+//   try {
+//     await poppler.convert(pdfPath, options);
+
+//     const imageFiles = fs
+//       .readdirSync(outputDir)
+//       .filter(
+//         (file) => file.startsWith(outputPrefix), //&& file.endsWith(`.${outputFormat}`,
+//       )
+//       .map((file) => path.join(outputDir, file))
+//       .filter((img) => img.endsWith(".png"));
+
+//     return imageFiles;
+//   } catch (error) {
+//     console.error("Error converting PDF to images:", error);
+//     throw new Error("PDF conversion failed");
+//   }
+// };
 
 export const extractImagesFromPDF = async (
   pdfPath: string,
 ): Promise<string[]> => {
-  const outputDir = path.dirname(pdfPath);
+  const outputDir = path.join(process.cwd(), "public", "uploads");
   const outputPrefix = path.basename(pdfPath, path.extname(pdfPath));
-  const outputFormat = "jpeg";
+  const outputFormat = "png";
 
   const options = {
     format: outputFormat,
@@ -16,26 +49,74 @@ export const extractImagesFromPDF = async (
     page: null,
   };
 
-  try {
-    await poppler.convert(pdfPath, options);
+  await poppler.convert(pdfPath, options);
 
-    const imageFiles = fs
-      .readdirSync(outputDir)
-      .filter((file) => {
-        return file.startsWith(outputPrefix);
-      }) //&& file.endsWith(`.${outputFormat}`)
-      .map((file) => path.join(outputDir, file));
+  const files = await fs.readdir(outputDir);
+  return files
+    .filter((file) => file.startsWith(outputPrefix) && file.endsWith(".png"))
+    .map((file) => `/uploads/${file}`);
+};
+export const uploadToShopify = async (
+  imagePaths: string[],
+  shop: string,
+  accessToken: string,
+) => {
+  const uploadPromises = imagePaths.map(async (imagePath: string) => {
+    try {
+      const imageBuffer = await fs.readFile(
+        path.join(process.cwd(), "public", imagePath),
+      );
 
-    const base64Images = await Promise.all(
-      imageFiles.slice(0, -1).map(async (filePath) => {
-        const imageBuffer = await fs.promises.readFile(filePath);
-        return `data:image/${outputFormat};base64,${imageBuffer.toString("base64")}`;
-      }),
-    );
+      const base64Image = imageBuffer.toString("base64");
 
-    return base64Images;
-  } catch (error) {
-    console.error("Error converting PDF to images:", error);
-    throw new Error("PDF conversion failed");
-  }
+      const query = `
+     mutation fileCreate($files: [FileCreateInput!]!) {
+        fileCreate(files: $files) {
+          files {
+            id
+            fileStatus
+            alt
+            createdAt
+          }
+        }
+}
+      `;
+
+      const variables = {
+        files: [
+          {
+            alt: "PDF extracted image",
+            contentType: "IMAGE",
+            originalSource: `data:image/png;base64,${base64Image}`,
+          },
+        ],
+      };
+
+      const response = await axios.post(
+        `https://${shop}/admin/api/2024-10/graphql.json`,
+        { query, variables },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": accessToken,
+          },
+        },
+      );
+
+      console.log(response.data, "RESPONSE");
+      console.log(response.data.errors, "RESPONSE ERROR");
+      // if (response.data.data.fileCreate.userErrors.length) {
+      //   throw new Error(response.data.data.fileCreate.userErrors[0].message);
+      // }
+
+      // return response.data.data.fileCreate.files[0].originalSource;
+      return "11";
+    } catch (error: any) {
+      console.error(`Error uploading image at ${imagePath}:`, error.message);
+      throw error;
+    }
+  });
+
+  // Wait for all uploads to finish
+  return Promise.all(uploadPromises);
 };

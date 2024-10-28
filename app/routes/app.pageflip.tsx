@@ -11,13 +11,15 @@ interface Marker {
   color: string;
 }
 
-const PageFlip: React.FC = () => {
-  const images: string[] = [
-    "https://i.pinimg.com/originals/8e/4a/24/8e4a24a655d3a7ff7a364d7496dd0d38.jpg",
-    "https://i.pinimg.com/736x/6b/0a/ff/6b0aff630f17678b9b3924db160da4f8.jpg",
-    "https://i.pinimg.com/736x/b2/6c/57/b26c57c6ee933c0aa7c03525c76d49f1.jpg",
-    "https://i.pinimg.com/736x/fa/0c/86/fa0c86f585af82067f4e0a4d7fd06ae6.jpg",
-  ];
+const PageFlip = ({ images }: { images: string[] }) => {
+  console.log(images);
+  // const PageFlip = () => {
+  // const images: string[] = [
+  //   "https://i.pinimg.com/originals/8e/4a/24/8e4a24a655d3a7ff7a364d7496dd0d38.jpg",
+  //   "https://i.pinimg.com/736x/6b/0a/ff/6b0aff630f17678b9b3924db160da4f8.jpg",
+  //   "https://i.pinimg.com/736x/b2/6c/57/b26c57c6ee933c0aa7c03525c76d49f1.jpg",
+  //   "https://i.pinimg.com/736x/fa/0c/86/fa0c86f585af82067f4e0a4d7fd06ae6.jpg",
+  // ];
 
   const colorPalette = [
     "#FF5733",

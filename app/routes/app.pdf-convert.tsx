@@ -1,50 +1,45 @@
+import {
+  json,
+  unstable_parseMultipartFormData,
+  unstable_createFileUploadHandler,
+} from "@remix-run/node";
+import {
+  useLoaderData,
+  useFetcher,
+  useActionData,
+  Form,
+} from "@remix-run/react";
 import path from "path";
-import { ActionFunctionArgs, json } from "@remix-run/node";
-import { extractImagesFromPDF } from "app/utils/utils";
-import { motion } from "framer-motion";
-import fs from "fs";
-import { Form, useActionData } from "@remix-run/react";
-import { useState } from "react";
 import PageFlip from "./app.pageflip";
+import { extractImagesFromPDF, uploadToShopify } from "app/utils/utils";
+import { authenticate } from "app/shopify.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData();
-  const pdfFile = formData.get("pdf") as File;
+export const action = async ({ request }: { request: Request }) => {
+  const { session } = await authenticate.admin(request);
+  const { shop, accessToken } = session;
+  const uploadHandler = unstable_createFileUploadHandler({
+    directory: path.join(process.cwd(), "public", "uploads"),
+    maxPartSize: 5_000_000,
+    file: ({ filename }) => filename,
+  });
 
-  if (!pdfFile || pdfFile.type !== "application/pdf") {
-    return json({ error: "Invalid PDF file." }, { status: 400 });
-  }
-
-  const tempDir = path.join("C:", "tmp");
-  const tempPath = path.join(tempDir, pdfFile.name);
-
-  await fs.promises.mkdir(tempDir, { recursive: true });
-
-  await fs.promises.writeFile(
-    tempPath,
-    Buffer.from(await pdfFile.arrayBuffer()),
+  const formData = await unstable_parseMultipartFormData(
+    request,
+    uploadHandler,
   );
+  const pdf = formData.get("pdf") as File;
 
-  const images = await extractImagesFromPDF(tempPath);
+  if (!pdf) return json({ error: "No file uploaded" }, { status: 400 });
 
-  // const pdf:any = {
-  //   images: []
-  // }
+  const pdfPath = path.join(process.cwd(), "public", "uploads", pdf.name);
+  const imageUrls = await extractImagesFromPDF(pdfPath);
 
-  // for(let image of images) {
-  //   const imageURL = await uploadToShopify(image)
-  //   pdf.images.push({
-  //     image_url: imageURL,
-  //     points: [
-  //     ]
-  //   })
-  // }
-
-  // await savePdfDataToShopifyMetafield(pdf)
-
-  await fs.promises.unlink(tempPath);
-
-  return json({ images });
+  // const imagessss = await uploadToShopify(imageUrls, shop, accessToken);
+  // console.log(imagessss, "IMAGESS RETURN");
+  return json({ images: imageUrls });
+};
+export const loader = () => {
+  return json({ images: [] });
 };
 
 const PDFConverter = () => {
@@ -53,7 +48,6 @@ const PDFConverter = () => {
   return (
     <div className="flex flex-col items-center w-full min-h-screen bg-gray-100 space-y-8 p-4">
       <h2 className="text-4xl font-bold mb-8">PDF to Image Converter</h2>
-
       <Form method="post" encType="multipart/form-data" className="mb-8">
         <input
           type="text"
@@ -69,11 +63,10 @@ const PDFConverter = () => {
           Submit
         </button>
       </Form>
-      {/* 
       {actionData?.images && actionData && (
         <PageFlip images={actionData?.images} />
-      )} */}
-      <PageFlip />
+      )}
+      {/* <PageFlip /> */}
     </div>
   );
 };
