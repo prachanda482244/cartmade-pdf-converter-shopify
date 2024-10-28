@@ -1,57 +1,126 @@
-import React, { useState } from "react";
+import React, { useState, MouseEvent } from "react";
 import { motion } from "framer-motion";
+import Draggable from "react-draggable";
 
-const PageFlip = ({ images }: { images: string[] }) => {
-  const [currentPage, setCurrentPage] = useState(0);
-  const [animate, setAnimate] = useState(false);
-  const [markers, setMarkers] = useState<
-    { x: number; y: number; imageIndex: number; product: string }[]
-  >([]);
+interface Marker {
+  x: number;
+  y: number;
+  imageIndex: number;
+  product: string;
+  productImage: string;
+  color: string;
+}
+
+const PageFlip: React.FC = () => {
+  const images: string[] = [
+    "https://i.pinimg.com/originals/8e/4a/24/8e4a24a655d3a7ff7a364d7496dd0d38.jpg",
+    "https://i.pinimg.com/736x/6b/0a/ff/6b0aff630f17678b9b3924db160da4f8.jpg",
+    "https://i.pinimg.com/736x/b2/6c/57/b26c57c6ee933c0aa7c03525c76d49f1.jpg",
+    "https://i.pinimg.com/736x/fa/0c/86/fa0c86f585af82067f4e0a4d7fd06ae6.jpg",
+  ];
+
+  const colorPalette = [
+    "#FF5733",
+    "#FF8D1A",
+    "#FFC300",
+    "#DAF7A6",
+    "#33FF57",
+    "#33C7FF",
+    "#6A33FF",
+  ];
+
+  const [currentPage, setCurrentPage] = useState<number>(0);
+  const [animate, setAnimate] = useState<boolean>(false);
+  const [markers, setMarkers] = useState<Marker[]>([]);
+  const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
 
   const handleNextPage = () => {
     if (currentPage < images.length - 2) {
       setAnimate(true);
-      setCurrentPage(currentPage + 2);
+      setCurrentPage((prevPage) => prevPage + 2);
     }
   };
 
   const handlePrevPage = () => {
     if (currentPage > 0) {
       setAnimate(true);
-      setCurrentPage(currentPage - 2);
+      setCurrentPage((prevPage) => prevPage - 2);
     }
   };
 
   const handleImageMarker = async (
-    event: React.MouseEvent<HTMLImageElement>,
+    event: MouseEvent<HTMLImageElement>,
     imageIndex: number,
+    isRightImage: boolean,
   ) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    // Open the Shopify Resource Picker
-    const selected = await shopify.resourcePicker({
+    const adjustedX = isRightImage ? x + rect.width : x;
+
+    const selected: any = await shopify.resourcePicker({
       type: "product",
       multiple: true,
-      filter: {
-        variants: false,
-        archived: false,
-        draft: false,
-      },
+      filter: { variants: false, archived: false, draft: false },
     });
 
-    if (!selected) return;
-    if (selected?.length > 0) {
+    if (selected && selected.length > 0) {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
-        { x, y, imageIndex, product: selected[0].title },
+        {
+          x: adjustedX,
+          y,
+          imageIndex,
+          product: selected[0].title,
+          productImage: selected[0].images[0].originalSrc,
+          color: colorPalette[prevMarkers.length % colorPalette.length],
+        },
       ]);
     }
   };
+
+  const handleMarkerClick = (marker: Marker) => {
+    setSelectedMarker(marker);
+  };
+
+  const handleRemoveMarker = () => {
+    if (selectedMarker) {
+      setMarkers((prevMarkers) =>
+        prevMarkers.filter((marker) => marker !== selectedMarker),
+      );
+      setSelectedMarker(null);
+    }
+  };
+
+  const handleDragStop = (e: MouseEvent, data: any, markerIndex: number) => {
+    const pageWidth = 450; // Half of 900px page width
+    const newMarkers = [...markers];
+    const marker = newMarkers[markerIndex];
+
+    if (marker) {
+      if (data.x < pageWidth && marker.imageIndex % 2 === 1) {
+        marker.imageIndex = marker.imageIndex - 1;
+      } else if (data.x >= pageWidth && marker.imageIndex % 2 === 0) {
+        marker.imageIndex = marker.imageIndex + 1;
+      }
+      marker.x = data.x;
+      marker.y = data.y;
+      setMarkers(newMarkers);
+      setCurrentPage(
+        marker.imageIndex % 2 === 0 ? marker.imageIndex : marker.imageIndex - 1,
+      );
+    }
+  };
+
   console.log(markers);
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
+      <div className="flex items-center justify-end py-1">
+        <button className="bg-blue-500 hover:bg-blue-700 text-white rounded-lg  shadow-md  py-1 px-2">
+          Save
+        </button>
+      </div>
       <div className="relative w-[900px] h-[550px] perspective-1000">
         <motion.div
           className="absolute flex w-full h-full bg-white rounded-lg shadow-lg"
@@ -67,8 +136,8 @@ const PageFlip = ({ images }: { images: string[] }) => {
           <img
             src={images[currentPage]}
             alt={`Page ${currentPage + 1}`}
-            className="w-full h-full object-cover rounded-tl-lg rounded-bl-lg"
-            onClick={(event) => handleImageMarker(event, currentPage)}
+            className="w-1/2 h-full object-cover rounded-tl-lg rounded-bl-lg"
+            onClick={(event) => handleImageMarker(event, currentPage, false)}
           />
           <img
             src={
@@ -77,41 +146,38 @@ const PageFlip = ({ images }: { images: string[] }) => {
                 : images[currentPage]
             }
             alt={`Page ${currentPage + 2}`}
-            className="w-full h-full object-cover rounded-tr-lg rounded-br-lg"
-            onClick={(event) => handleImageMarker(event, currentPage + 1)}
+            className="w-1/2 h-full object-cover rounded-tr-lg rounded-br-lg"
+            onClick={(event) => handleImageMarker(event, currentPage + 1, true)}
           />
-          {markers.map((marker, index) =>
-            marker.imageIndex === currentPage ? (
-              <div
-                key={index}
-                className="absolute"
-                style={{
-                  left: marker.x,
-                  top: marker.y,
-                  transform: "translate(-50%, -50%)",
-                }}
-              >
-                <div className="bg-blue-500 w-2 h-2 rounded-full" />
-                <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 text-xs text-white bg-black p-1 rounded">
-                  {marker.product}
-                </div>
-              </div>
-            ) : marker.imageIndex === currentPage + 1 ? (
-              <div
-                key={index}
-                className="absolute"
-                style={{
-                  left: marker.x,
-                  top: marker.y,
-                  transform: "translate(-50%, -50%)",
-                }}
-              >
-                <div className="bg-blue-500 w-2 h-2 rounded-full" />
-                <div className="absolute left-1/2 transform -translate-x-1/2 mt-1 text-xs text-white bg-black p-1 rounded">
-                  {marker.product}
-                </div>
-              </div>
-            ) : null,
+          {markers.map(
+            (marker, index) =>
+              (marker.imageIndex === currentPage ||
+                marker.imageIndex === currentPage + 1) && (
+                <Draggable
+                  key={index}
+                  defaultPosition={{ x: marker.x, y: marker.y }}
+                  onStop={(e: any, data) => handleDragStop(e, data, index)}
+                >
+                  <div
+                    className="absolute flex justify-between items-center text-white text-sm px-3 p-1 rounded-full shadow-lg cursor-pointer"
+                    style={{ backgroundColor: marker.color }}
+                    onDoubleClick={() => handleMarkerClick(marker)}
+                  >
+                    <span className="mr-2">{marker.product.slice(0, 3)}..</span>
+                    <button
+                      className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMarkers((prevMarkers) =>
+                          prevMarkers.filter((m) => m !== marker),
+                        );
+                      }}
+                    >
+                      <span className="text-xs font-bold text-white">×</span>
+                    </button>
+                  </div>
+                </Draggable>
+              ),
           )}
         </motion.div>
       </div>
@@ -140,6 +206,36 @@ const PageFlip = ({ images }: { images: string[] }) => {
           Next
         </button>
       </div>
+
+      {selectedMarker && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg w-3/4 max-w-3xl shadow-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold">
+                {selectedMarker.product}
+              </h2>
+              <button
+                onClick={() => setSelectedMarker(null)}
+                className="text-gray-600 hover:text-gray-800"
+              >
+                &times;
+              </button>
+            </div>
+            <img
+              src={selectedMarker.productImage}
+              alt={selectedMarker.product}
+              className="w-full h-48 object-contain mb-4"
+            />
+            <p>More details here...</p>
+            <button
+              onClick={handleRemoveMarker}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            >
+              Remove Product
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

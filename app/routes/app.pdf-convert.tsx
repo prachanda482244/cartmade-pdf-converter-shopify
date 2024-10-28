@@ -27,6 +27,21 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const images = await extractImagesFromPDF(tempPath);
 
+  // const pdf:any = {
+  //   images: []
+  // }
+
+  // for(let image of images) {
+  //   const imageURL = await uploadToShopify(image)
+  //   pdf.images.push({
+  //     image_url: imageURL,
+  //     points: [
+  //     ]
+  //   })
+  // }
+
+  // await savePdfDataToShopifyMetafield(pdf)
+
   await fs.promises.unlink(tempPath);
 
   return json({ images });
@@ -40,6 +55,12 @@ const PDFConverter = () => {
       <h2 className="text-4xl font-bold mb-8">PDF to Image Converter</h2>
 
       <Form method="post" encType="multipart/form-data" className="mb-8">
+        <input
+          type="text"
+          name="pdfName"
+          placeholder="PDF Name"
+          className="bg-blue-800"
+        />
         <input type="file" name="pdf" accept="application/pdf" required />
         <button
           type="submit"
@@ -48,10 +69,11 @@ const PDFConverter = () => {
           Submit
         </button>
       </Form>
-
+      {/* 
       {actionData?.images && actionData && (
         <PageFlip images={actionData?.images} />
-      )}
+      )} */}
+      <PageFlip />
     </div>
   );
 };
