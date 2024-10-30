@@ -78,6 +78,7 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
           y,
           imageIndex,
           product: selected[0].title,
+          productId: selected[0].id,
           productImage: selected[0]?.images[0]?.originalSrc,
           color: colorPalette[prevMarkers.length % colorPalette.length],
         },

@@ -16,6 +16,7 @@ export interface Marker {
   x: number;
   y: number;
   imageIndex: number;
+  productId: string;
   product: string;
   productImage: string;
   color: string;
