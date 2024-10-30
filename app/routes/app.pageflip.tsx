@@ -120,11 +120,32 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
   };
 
   const handleSave = () => {
-    markers.forEach((marker) => {
-      const image = images.find((img) => img.id - 1 === marker.imageIndex);
-      if (!image?.points) return;
-      if (image) {
-        image.points.push(marker);
+    console.log("Markers before saving:", markers);
+
+    images.forEach((image) => {
+      const imageMarkers = markers.filter(
+        (marker) => marker.imageIndex === image.id - 1,
+      );
+
+      if (imageMarkers.length > 0) {
+        if (!image.points) {
+          image.points = [];
+        }
+
+        imageMarkers.forEach((marker) => {
+          const existingPoint = image.points?.some(
+            ({ productId }) => productId === marker.productId,
+          );
+
+          if (!image.points) return;
+          if (!existingPoint) {
+            image.points.push(marker);
+          }
+        });
+      } else {
+        if (image.points) {
+          delete image.points;
+        }
       }
     });
 
