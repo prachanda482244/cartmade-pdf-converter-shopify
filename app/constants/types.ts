@@ -6,6 +6,7 @@ export interface PDFVALUES {
       images: {
         url: string;
         points: [];
+        id: number;
       }[];
     };
   };
@@ -21,6 +22,7 @@ export interface Marker {
 }
 
 interface ImageData {
+  id: number;
   url: string;
   points?: Marker[];
 }

@@ -4,6 +4,7 @@ import Draggable from "react-draggable";
 import { useActionData, useFetcher } from "@remix-run/react";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { IMAGES, Marker } from "app/constants/types";
+import { image, marker } from "framer-motion/client";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const formData = await request.formData();
@@ -118,9 +119,17 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
   };
 
   const handleSave = () => {
-    console.log(markers);
-    console.log(images);
+    markers.forEach((marker) => {
+      const image = images.find((img) => img.id - 1 === marker.imageIndex);
+      if (!image?.points) return;
+      if (image) {
+        image.points.push(marker);
+      }
+    });
+
+    console.log("Updated images:", images);
   };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <div className="flex items-center justify-end py-1">
