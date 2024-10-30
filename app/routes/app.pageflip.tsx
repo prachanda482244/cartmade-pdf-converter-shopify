@@ -1,25 +1,28 @@
 import React, { useState, MouseEvent } from "react";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
+import { useActionData, useFetcher } from "@remix-run/react";
+import { ActionFunctionArgs, json } from "@remix-run/node";
+import { IMAGES, Marker } from "app/constants/types";
 
-interface Marker {
-  x: number;
-  y: number;
-  imageIndex: number;
-  product: string;
-  productImage: string;
-  color: string;
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const formData = await request.formData();
+  const markers = formData.get("markers") as string;
+  const metaFieldId: any = formData.get("metaFieldId");
+
+  console.log("Received markers:", markers);
+  console.log("Received metaFieldId:", metaFieldId);
+
+  const metafieldData = await fetchMetafieldData(metaFieldId);
+  console.log("Fetched metafield data:", metafieldData);
+
+  return json({ success: true, markers, metafieldData });
+};
+async function fetchMetafieldData(metaFieldId: string) {
+  return { exampleData: "Example metafield data" };
 }
-
-const PageFlip = ({ images }: { images: string[] }) => {
-  console.log(images);
-  // const PageFlip = () => {
-  // const images: string[] = [
-  //   "https://i.pinimg.com/originals/8e/4a/24/8e4a24a655d3a7ff7a364d7496dd0d38.jpg",
-  //   "https://i.pinimg.com/736x/6b/0a/ff/6b0aff630f17678b9b3924db160da4f8.jpg",
-  //   "https://i.pinimg.com/736x/b2/6c/57/b26c57c6ee933c0aa7c03525c76d49f1.jpg",
-  //   "https://i.pinimg.com/736x/fa/0c/86/fa0c86f585af82067f4e0a4d7fd06ae6.jpg",
-  // ];
+const PageFlip = ({ images, metaFieldId }: IMAGES) => {
+  const actionData = useActionData();
 
   const colorPalette = [
     "#FF5733",
@@ -35,7 +38,6 @@ const PageFlip = ({ images }: { images: string[] }) => {
   const [animate, setAnimate] = useState<boolean>(false);
   const [markers, setMarkers] = useState<Marker[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
-
   const handleNextPage = () => {
     if (currentPage < images.length - 2) {
       setAnimate(true);
@@ -96,7 +98,7 @@ const PageFlip = ({ images }: { images: string[] }) => {
   };
 
   const handleDragStop = (e: MouseEvent, data: any, markerIndex: number) => {
-    const pageWidth = 450; // Half of 900px page width
+    const pageWidth = 450;
     const newMarkers = [...markers];
     const marker = newMarkers[markerIndex];
 
@@ -115,11 +117,17 @@ const PageFlip = ({ images }: { images: string[] }) => {
     }
   };
 
-  console.log(markers);
+  const handleSave = () => {
+    console.log(markers);
+    console.log(images);
+  };
   return (
     <div className="flex flex-col min-h-screen bg-gray-100">
       <div className="flex items-center justify-end py-1">
-        <button className="bg-blue-500 hover:bg-blue-700 text-white rounded-lg  shadow-md  py-1 px-2">
+        <button
+          onClick={handleSave}
+          className="bg-blue-500 hover:bg-blue-700 text-white rounded-lg  shadow-md  py-1 px-2"
+        >
           Save
         </button>
       </div>
@@ -136,7 +144,7 @@ const PageFlip = ({ images }: { images: string[] }) => {
           onAnimationComplete={() => setAnimate(false)}
         >
           <img
-            src={images[currentPage]}
+            src={images[currentPage].url}
             alt={`Page ${currentPage + 1}`}
             className="w-1/2 h-full object-cover rounded-tl-lg rounded-bl-lg"
             onClick={(event) => handleImageMarker(event, currentPage, false)}
@@ -144,8 +152,8 @@ const PageFlip = ({ images }: { images: string[] }) => {
           <img
             src={
               currentPage + 1 < images.length
-                ? images[currentPage + 1]
-                : images[currentPage]
+                ? images[currentPage + 1].url
+                : images[currentPage].url
             }
             alt={`Page ${currentPage + 2}`}
             className="w-1/2 h-full object-cover rounded-tr-lg rounded-br-lg"
