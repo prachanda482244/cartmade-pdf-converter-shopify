@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://inbox-municipality-various-mexico.trycloudflare.com"
+application_url = "https://text-immediate-yemen-diving.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://inbox-municipality-various-mexico.trycloudflare.com/auth/callback",
-  "https://inbox-municipality-various-mexico.trycloudflare.com/auth/shopify/callback",
-  "https://inbox-municipality-various-mexico.trycloudflare.com/api/auth/callback"
+  "https://text-immediate-yemen-diving.trycloudflare.com/auth/callback",
+  "https://text-immediate-yemen-diving.trycloudflare.com/auth/shopify/callback",
+  "https://text-immediate-yemen-diving.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

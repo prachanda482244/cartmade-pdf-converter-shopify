@@ -63,7 +63,7 @@ const PageFlip = ({ images }: { images: string[] }) => {
 
     const selected: any = await shopify.resourcePicker({
       type: "product",
-      multiple: true,
+      multiple: 1,
       filter: { variants: false, archived: false, draft: false },
     });
 
@@ -75,7 +75,7 @@ const PageFlip = ({ images }: { images: string[] }) => {
           y,
           imageIndex,
           product: selected[0].title,
-          productImage: selected[0].images[0].originalSrc,
+          productImage: selected[0]?.images[0]?.originalSrc,
           color: colorPalette[prevMarkers.length % colorPalette.length],
         },
       ]);

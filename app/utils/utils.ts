@@ -120,3 +120,71 @@ export const uploadToShopify = async (
   // Wait for all uploads to finish
   return Promise.all(uploadPromises);
 };
+
+export const uploadImage = async (
+  imageBuffer: any,
+  shop: string,
+  accessToken: any,
+  apiVersion: string,
+) => {
+  const stagedUploadsQuery = `mutation stagedUploadsCreate($input: [StagedUploadInput!]!) {
+    stagedUploadsCreate(input: $input) {
+      stagedTargets {
+        resourceUrl
+        url
+        parameters {
+          name
+          value
+        }
+      }
+      userErrors {
+        field
+        message
+      }
+    }
+  }`;
+
+  const stagedUploadsVariables = {
+    input: {
+      filename: "image.jpg",
+      httpMethod: "POST",
+      mimeType: "image/jpeg",
+      resource: "FILE",
+    },
+  };
+
+  const stagedUploadsQueryResult = await axios.post(
+    `https://${shop}/admin/api/${apiVersion}/graphql.json`,
+    {
+      query: stagedUploadsQuery,
+      variables: stagedUploadsVariables,
+    },
+    {
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+      },
+    },
+  );
+
+  const target =
+    stagedUploadsQueryResult.data.data.stagedUploadsCreate.stagedTargets[0];
+  const params = target.parameters;
+  const url = target.url;
+  const resourceUrl = target.resourceUrl;
+
+  const form = new FormData();
+  params.forEach(({ name, value }: any) => {
+    form.append(name, value);
+  });
+
+  form.append("file", new Blob([imageBuffer]), `image-${Date.now()}.jpg`);
+
+  await axios.post(url, form, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+      "X-Shopify-Access-Token": accessToken,
+    },
+  });
+
+  return resourceUrl;
+};

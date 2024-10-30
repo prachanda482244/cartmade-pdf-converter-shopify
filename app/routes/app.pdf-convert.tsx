@@ -2,31 +2,31 @@ import {
   json,
   unstable_parseMultipartFormData,
   unstable_createFileUploadHandler,
+  ActionFunctionArgs,
 } from "@remix-run/node";
 import { useActionData, Form } from "@remix-run/react";
 import path from "path";
 import PageFlip from "./app.pageflip";
-import { extractImagesFromPDF } from "app/utils/utils";
-import { authenticate } from "app/shopify.server";
+import { extractImagesFromPDF, uploadImage } from "app/utils/utils";
+import { apiVersion, authenticate } from "app/shopify.server";
 import { useState } from "react";
-import { version } from "os";
 import axios from "axios";
+import fs from "fs";
 
-export const action = async ({ request }: { request: Request }) => {
+export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
   const { shop, accessToken } = session;
+
   const uploadHandler = unstable_createFileUploadHandler({
     directory: path.join(process.cwd(), "public", "uploads"),
     maxPartSize: 5_000_000,
     file: ({ filename }) => filename,
   });
-  const SHOPIFY_FILES_API_URL = `https://${shop}/admin/api/${version}/files.json`;
+
   const formData = await unstable_parseMultipartFormData(
     request,
     uploadHandler,
   );
-
-  console.log(formData, "FORMDATA");
   const pdf = formData.get("pdf") as File;
   const pdfName = formData.get("pdfName") || "Untitled PDF";
 
@@ -34,37 +34,68 @@ export const action = async ({ request }: { request: Request }) => {
 
   const pdfPath = path.join(process.cwd(), "public", "uploads", pdf.name);
   const imageUrls = await extractImagesFromPDF(pdfPath);
+  const readedUrls = [];
 
-  const uploadPromises = imageUrls.map(async (imageUrl) => {
-    try {
-      const response = await axios.post(
-        SHOPIFY_FILES_API_URL,
-        {
-          file: {
-            attachment: imageUrl,
-            filename: path.basename(imageUrl),
-          },
-        },
-        {
-          headers: {
-            "X-Shopify-Access-Token": accessToken,
-            Accept: "application/json",
-            "Content-Type": "application/json",
-            "Accept-Encoding": "gzip, compress, deflate, br",
-          },
-        },
-      );
-      console.log(response, "RESPOSNE FIOLE UPLOAD SUCCESSFULss");
+  for (let url of imageUrls) {
+    const imagePath = path.join(process.cwd(), "public", url);
+    const imageBuffer = fs.readFileSync(imagePath);
+    readedUrls.push(imageBuffer);
+  }
+  const uploadedImages = [];
 
-      return response.data.file;
-    } catch (error) {
-      console.error("Error uploading file to Shopify:", error);
-      return null;
+  for (const imageBuffer of readedUrls) {
+    const resourceUrl = await uploadImage(
+      imageBuffer,
+      shop,
+      accessToken,
+      apiVersion,
+    );
+    uploadedImages.push(resourceUrl);
+  }
+
+  console.log(readedUrls, "Readed ursl");
+
+  // readedUrls.forEach((url) => {
+  //   const imagePath = path.join(process.cwd(), "public", url);
+  //   fs.unlink(imagePath, (err) => {
+  //     if (err) console.error(`Error deleting file ${imagePath}:`, err);
+  //   });
+  // });
+
+  const createFileQuery = `mutation fileCreate($files: [FileCreateInput!]!) {
+    fileCreate(files: $files) {
+      files {
+        alt
+      }
+      userErrors {
+        field
+        message
+      }
     }
-  });
-  const uploadedFiles = await Promise.all(uploadPromises);
-  console.log(uploadedFiles);
-  return json({ images: imageUrls, pdfName });
+  }`;
+
+  const createFileVariables = {
+    files: uploadedImages.map((url) => ({
+      alt: "alt-tag",
+      contentType: "IMAGE",
+      originalSource: url,
+    })),
+  };
+
+  const createFileQueryResult = await axios.post(
+    `https://${shop}/admin/api/${apiVersion}/graphql.json`,
+    {
+      query: createFileQuery,
+      variables: createFileVariables,
+    },
+    {
+      headers: {
+        "X-Shopify-Access-Token": `${accessToken}`,
+      },
+    },
+  );
+  console.log(createFileQueryResult.data.data.fileCreate, "MAIN IMAGE");
+  return json({ images: uploadedImages, pdfName });
 };
 
 const PDFConverter = () => {
