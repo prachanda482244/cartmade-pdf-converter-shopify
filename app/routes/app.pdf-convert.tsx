@@ -1,19 +1,29 @@
 import {
+  DropZone,
+  LegacyStack,
+  Text,
+  Page,
+  Button,
+  Icon,
+} from "@shopify/polaris";
+import { DeleteIcon } from "@shopify/polaris-icons";
+import { useState, useCallback } from "react";
+import {
   json,
   unstable_parseMultipartFormData,
   unstable_createFileUploadHandler,
   ActionFunctionArgs,
   LoaderFunctionArgs,
 } from "@remix-run/node";
-import { useActionData, Form, useLoaderData } from "@remix-run/react";
+import { useLoaderData, useNavigate } from "@remix-run/react";
 import path from "path";
 import PageFlip from "./app.pageflip";
 import { extractImagesFromPDF, uploadImage } from "app/utils/utils";
 import { apiVersion, authenticate } from "app/shopify.server";
-import { useState } from "react";
 import axios from "axios";
 import fs from "fs";
 import { PDFVALUES } from "app/constants/types";
+import { ReadableStreamDefaultController } from "stream/web";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -31,7 +41,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
 
   const pdf = formData.get("pdf") as File;
-  const pdfName = formData.get("pdfName") || pdf.name || "Untitled PDF";
+  const pdfName = formData.get("pdfName") || pdf?.name || "Untitled PDF";
 
   if (!pdf) return json({ error: "No file uploaded" }, { status: 400 });
 
@@ -100,7 +110,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   const metafieldData = {
     namespace: "PDF",
-    key: "fields",
+    key: "fields" + Date.now(),
     value: JSON.stringify({
       pdfName: pdfName,
 
@@ -132,47 +142,66 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
+
+  // Define the GraphQL query with the correct structure and close brackets
   const GET_PDF_QUERY = `
-  query GetPDFQuery {
-    shop {
-      metafield(namespace: "PDF", key: "fields") {
-        id
-        key
-        value
-        jsonValue
-        type
-        updatedAt
+    query GetPDFQuery {
+      shop {
+        metafields(first: 5, namespace: "PDF") {
+          edges {
+            node {
+              id
+              namespace
+              key
+              jsonValue
+              type
+            }
+          }
+        }
       }
     }
-  }
-`;
+  `;
+
   try {
+    // Execute the GraphQL query
     const data = await admin.graphql(GET_PDF_QUERY);
-    if (!data) return { error: "No data found" };
-    const response = await data.json();
-    if (!response.data) {
-      console.error("GraphQL errors:", "Failed to fetch settings");
+
+    // Check if the query returned any data
+    if (!data) {
+      console.error("Failed to fetch PDF metafield");
       return { error: "Failed to fetch PDF metafield." };
     }
-
-    const PDFS = response?.data?.shop?.metafield;
-
-    if (!PDFS) {
-      console.warn("No button settings metafield found.");
-      return { error: "Button settings metafield not found." };
+    const response = await data.json();
+    const pdfMetafields = response.data.shop.metafields.edges.map(
+      (edge: any) => edge.node,
+    );
+    console.log(pdfMetafields, "ARRAYS");
+    if (!pdfMetafields.length) {
+      console.warn("No PDF metafields found.");
+      return { error: "No PDF metafields found." };
     }
 
-    return { pdfData: PDFS };
+    const actualResponse = pdfMetafields.map((pdf: any) => ({
+      id: pdf.id.split("/")[pdf.id.split("/").length - 1],
+      pdfName: pdf.jsonValue.pdfName,
+      frontPage: pdf.jsonValue.images[0]?.url,
+      allImages: pdf.jsonValue.images,
+    }));
+
+    return { pdfData: actualResponse };
   } catch (error) {
-    console.error("Error fetching button settings:", error);
-    return { error: "Unexpected error occurred while fetching metafield." };
+    console.error("Error fetching PDF metafields:", error);
+    return { error: "Unexpected error occurred while fetching metafields." };
   }
 };
 
 const PDFConverter = () => {
-  let {
-    pdfData: { jsonValue, id },
-  } = useLoaderData<PDFVALUES>();
+  // let {
+  //   pdfData: { jsonValue, id },
+  // } = useLoaderData<PDFVALUES>();
+
+  const { pdfData } = useLoaderData<PDFVALUES>();
+  console.log(pdfData);
   const [selectedFileName, setSelectedFileName] = useState("");
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -180,80 +209,167 @@ const PDFConverter = () => {
       setSelectedFileName(file.name);
     }
   };
+  const [files, setFiles] = useState<File[]>([]);
+  console.log(files, "FIELDas");
+  const handleDropZoneDrop = useCallback(
+    (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) =>
+      setFiles((files) => [...files, ...acceptedFiles]),
+    [],
+  );
+
+  const validImageTypes = ["application/pdf"];
+
+  const fileUpload = !files.length && (
+    <DropZone.FileUpload actionHint="Accepts PDF only" />
+  );
+
+  const uploadedFiles = files.length > 0 && (
+    <LegacyStack vertical>
+      {files.map((file, index) => (
+        <div className="p-4 text-center flex items-center justify-center">
+          <LegacyStack alignment="center" key={index}>
+            {file.name}{" "}
+            <Text variant="bodySm" alignment="center" as="p">
+              {file.size} bytes
+            </Text>
+          </LegacyStack>
+        </div>
+      ))}
+    </LegacyStack>
+  );
+  const handlePdfDelete = (id: string) => {
+    const confirmation = confirm("Are you sure you want to delete ? ");
+    if (confirmation) {
+      alert("deleted" + id);
+    }
+  };
+
+  const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col items-center w-full min-h-screen bg-gray-100 space-y-8 p-4">
-      {!jsonValue && (
-        <div>
-          <h2 className="text-4xl font-bold mb-8 text-gray-800">
-            PDF to Image Converter
-          </h2>
-          <Form
-            method="post"
-            encType="multipart/form-data"
-            className="mb-8 w-full max-w-md space-y-4"
-          >
-            <input
-              type="text"
-              name="pdfName"
-              placeholder="Enter a name for your PDF"
-              className="w-full px-4 py-2 text-lg bg-blue-50 border border-blue-300 rounded-md focus:ring focus:ring-blue-500 focus:outline-none"
-            />
-            <div className="flex flex-col items-center justify-center w-full border-2 border-dashed border-blue-500 rounded-lg py-4">
-              <label htmlFor="file-upload" className="cursor-pointer">
-                <div className="flex flex-col items-center">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="w-12 h-12 text-blue-500 mb-2"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 4v16m8-8H4"
-                    />
-                  </svg>
-                  <span className="text-blue-500 font-medium">
-                    {selectedFileName || "Click to upload PDF"}
-                  </span>
-                </div>
-              </label>
-              <input
-                id="file-upload"
-                type="file"
-                name="pdf"
-                accept="application/pdf"
-                onChange={handleFileChange}
-                required
-                className="hidden"
-              />
+    <>
+      <Page backAction={{ content: "Settings", url: "#" }} title="PDF">
+        <div className="flex w-full items-center mt-2 justify-center ">
+          <div className="w-1/2 flex flex-col gap-3">
+            <DropZone onDrop={handleDropZoneDrop} variableHeight>
+              {uploadedFiles}
+              {fileUpload}
+            </DropZone>
+            {/* <div className="text-center">
+              <Button variant="primary">Save</Button>
+            </div> */}
+          </div>
+        </div>
+
+        {/* Main section  */}
+        <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
+          {pdfData.map(({ pdfName, frontPage, id }) => (
+            <div className="border bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="h-36 overflow-hidden relative">
+                <img
+                  alt=""
+                  width="100%"
+                  height="100%"
+                  style={{
+                    objectFit: "cover",
+                    objectPosition: "center",
+                  }}
+                  src={frontPage}
+                />
+                <button
+                  className="absolute  right-2 top-1"
+                  onClick={() => handlePdfDelete(id)}
+                >
+                  <Icon source={DeleteIcon} tone="textCritical" />
+                </button>
+              </div>
+              <div className="px-3 py-4 flex items-center justify-between">
+                <span>{pdfName.slice(0, 10) + ".pdf"}</span>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate(`/app/details/${id}`)}
+                  size="micro"
+                >
+                  view details
+                </Button>
+              </div>
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold text-lg transition"
-            >
-              Submit
-            </button>
-          </Form>
+          ))}
         </div>
-      )}
+      </Page>
+    </>
+    // <div className="flex flex-col items-center w-full min-h-screen bg-gray-100 space-y-8 p-4">
+    //   {jsonValue && (
+    //     <div>
+    //       <h2 className="text-4xl font-bold mb-8 text-gray-800">
+    //         PDF to Image Converter
+    //       </h2>
+    //       <Form
+    //         method="post"
+    //         encType="multipart/form-data"
+    //         className="mb-8 w-full max-w-md space-y-4"
+    //       >
+    //         <input
+    //           type="text"
+    //           name="pdfName"
+    //           placeholder="Enter a name for your PDF"
+    //           className="w-full px-4 py-2 text-lg bg-blue-50 border border-blue-300 rounded-md focus:ring focus:ring-blue-500 focus:outline-none"
+    //         />
+    //         <div className="flex flex-col items-center justify-center w-full border-2 border-dashed border-blue-500 rounded-lg py-4">
+    //           <label htmlFor="file-upload" className="cursor-pointer">
+    //             <div className="flex flex-col items-center">
+    //               <svg
+    //                 xmlns="http://www.w3.org/2000/svg"
+    //                 className="w-12 h-12 text-blue-500 mb-2"
+    //                 fill="none"
+    //                 viewBox="0 0 24 24"
+    //                 stroke="currentColor"
+    //               >
+    //                 <path
+    //                   strokeLinecap="round"
+    //                   strokeLinejoin="round"
+    //                   strokeWidth={2}
+    //                   d="M12 4v16m8-8H4"
+    //                 />
+    //               </svg>
+    //               <span className="text-blue-500 font-medium">
+    //                 {selectedFileName || "Click to upload PDF"}
+    //               </span>
+    //             </div>
+    //           </label>
+    //           <input
+    //             id="file-upload"
+    //             type="file"
+    //             name="pdf"
+    //             accept="application/pdf"
+    //             onChange={handleFileChange}
+    //             required
+    //             className="hidden"
+    //           />
+    //         </div>
 
-      {jsonValue?.pdfName && (
-        <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden p-4 space-y-4">
-          <h3 className="text-xl font-semibold text-gray-700">
-            Uploaded PDF Name: {jsonValue.pdfName}
-          </h3>
-        </div>
-      )}
+    //         <button
+    //           type="submit"
+    //           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold text-lg transition"
+    //         >
+    //           Submit
+    //         </button>
+    //       </Form>
+    //     </div>
+    //   )}
 
-      {jsonValue?.images && (
-        <PageFlip images={jsonValue.images} metaFieldId={id} />
-      )}
-    </div>
+    //   {jsonValue?.pdfName && (
+    //     <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden p-4 space-y-4">
+    //       <h3 className="text-xl font-semibold text-gray-700">
+    //         Uploaded PDF Name: {jsonValue.pdfName}
+    //       </h3>
+    //     </div>
+    //   )}
+
+    //   {jsonValue?.images && (
+    //     <PageFlip images={jsonValue.images} metaFieldId={id} />
+    //   )}
+    // </div>
   );
 };
 

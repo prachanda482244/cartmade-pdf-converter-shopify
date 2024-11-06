@@ -1,15 +1,14 @@
 export interface PDFVALUES {
   pdfData: {
     id: string;
-    jsonValue: {
-      pdfName: string;
-      images: {
-        url: string;
-        points: [];
-        id: number;
-      }[];
-    };
-  };
+    pdfName: string;
+    frontPage: string;
+    allImages: {
+      id: string;
+      url: string;
+      points?: Marker[];
+    }[];
+  }[];
 }
 
 export interface Marker {

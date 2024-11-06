@@ -1,29 +1,33 @@
 import React, { useState, MouseEvent } from "react";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
-import { useActionData, useFetcher } from "@remix-run/react";
+import { Form, useActionData, useFetcher } from "@remix-run/react";
 import { ActionFunctionArgs, json } from "@remix-run/node";
 import { IMAGES, Marker } from "app/constants/types";
 import { image, marker } from "framer-motion/client";
+import { Button, Page, Thumbnail } from "@shopify/polaris";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const formData = await request.formData();
-  const markers = formData.get("markers") as string;
-  const metaFieldId: any = formData.get("metaFieldId");
+  console.log("Triggered action");
+  //   const formData = await request.formData();
+  //   const markers = formData.get("markers");
+  //   const metaFieldId = formData.get("metaFieldId");
 
-  console.log("Received markers:", markers);
-  console.log("Received metaFieldId:", metaFieldId);
+  //   console.log("Markers:", markers);
+  //   console.log("MetaFieldId:", metaFieldId);
 
-  const metafieldData = await fetchMetafieldData(metaFieldId);
-  console.log("Fetched metafield data:", metafieldData);
-
-  return json({ success: true, markers, metafieldData });
+  //   // Perform any further logic here, like saving to the database or calling other APIs
+  //   return json({ success: true, markers, metaFieldId });
 };
-async function fetchMetafieldData(metaFieldId: string) {
-  return { exampleData: "Example metafield data" };
-}
+
+// async function fetchMetafieldData(metaFieldId: string) {
+//   return { exampleData: "Example metafield data" };
+// }
 const PageFlip = ({ images, metaFieldId }: IMAGES) => {
+  const fetcher = useFetcher();
+
   const actionData = useActionData();
+  console.log(actionData, "Action");
 
   const colorPalette = [
     "#FF5733",
@@ -118,166 +122,172 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
       );
     }
   };
-
+  const formData = new FormData();
   const handleSave = () => {
     console.log("Markers before saving:", markers);
 
     images.forEach((image) => {
+      const { id, points = [] } = image;
+
       const imageMarkers = markers.filter(
-        (marker) => marker.imageIndex === image.id - 1,
+        ({ imageIndex }) => imageIndex === id - 1,
       );
 
       if (imageMarkers.length > 0) {
-        if (!image.points) {
-          image.points = [];
-        }
-
-        imageMarkers.forEach((marker) => {
-          const existingPoint = image.points?.some(
-            ({ productId }) => productId === marker.productId,
+        image.points = points
+          .filter((point) =>
+            imageMarkers.some((marker) => marker.productId === point.productId),
+          )
+          .concat(
+            imageMarkers.filter(
+              (marker) =>
+                !points.some((point) => point.productId === marker.productId),
+            ),
           );
-
-          if (!image.points) return;
-          if (!existingPoint) {
-            image.points.push(marker);
-          }
-        });
       } else {
-        if (image.points) {
-          delete image.points;
-        }
+        image.points = [];
       }
     });
 
     console.log("Updated images:", images);
+
+    // fetcher.submit(formData, { method: "post" });
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
-      <div className="flex items-center justify-end py-1">
-        <button
-          onClick={handleSave}
-          className="bg-blue-500 hover:bg-blue-700 text-white rounded-lg  shadow-md  py-1 px-2"
-        >
-          Save
-        </button>
-      </div>
-      <div className="relative w-[900px] h-[550px] perspective-1000">
-        <motion.div
-          className="absolute flex w-full h-full bg-white rounded-lg shadow-lg"
-          initial={{ rotateY: 0, zIndex: 0 }}
-          animate={{
-            rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
-            zIndex: currentPage % 2 === 0 ? 0 : 1,
-          }}
-          transition={{ duration: 0.6 }}
-          style={{ transformOrigin: "right center" }}
-          onAnimationComplete={() => setAnimate(false)}
-        >
-          <img
-            src={images[currentPage].url}
-            alt={`Page ${currentPage + 1}`}
-            className="w-1/2 h-full object-cover rounded-tl-lg rounded-bl-lg"
-            onClick={(event) => handleImageMarker(event, currentPage, false)}
-          />
-          <img
-            src={
-              currentPage + 1 < images.length
-                ? images[currentPage + 1].url
-                : images[currentPage].url
-            }
-            alt={`Page ${currentPage + 2}`}
-            className="w-1/2 h-full object-cover rounded-tr-lg rounded-br-lg"
-            onClick={(event) => handleImageMarker(event, currentPage + 1, true)}
-          />
-          {markers.map(
-            (marker, index) =>
-              (marker.imageIndex === currentPage ||
-                marker.imageIndex === currentPage + 1) && (
-                <Draggable
-                  key={index}
-                  defaultPosition={{ x: marker.x, y: marker.y }}
-                  onStop={(e: any, data) => handleDragStop(e, data, index)}
-                >
-                  <div
-                    className="absolute flex justify-between items-center text-white text-sm px-3 p-1 rounded-full shadow-lg cursor-pointer"
-                    style={{ backgroundColor: marker.color }}
-                    onDoubleClick={() => handleMarkerClick(marker)}
+    <Page>
+      <div className="flex flex-col min-h-screen bg-gray-100">
+        <div className="flex items-center justify-end py-1">
+          <Button
+            onClick={handleSave}
+            loading={fetcher.state === "submitting"}
+            variant="primary"
+            submit={true}
+          >
+            Save
+          </Button>
+        </div>
+        <div className="relative w-[900px] h-[550px] perspective-1000">
+          <motion.div
+            className="absolute flex w-full h-full bg-white rounded-lg shadow-lg"
+            initial={{ rotateY: 0, zIndex: 0 }}
+            animate={{
+              rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
+              zIndex: currentPage % 2 === 0 ? 0 : 1,
+            }}
+            transition={{ duration: 0.6 }}
+            style={{ transformOrigin: "right center" }}
+            onAnimationComplete={() => setAnimate(false)}
+          >
+            <img
+              src={images[currentPage].url}
+              alt={`Page ${currentPage + 1}`}
+              className="w-1/2 h-full object-cover rounded-tl-lg rounded-bl-lg"
+              onClick={(event) => handleImageMarker(event, currentPage, false)}
+            />
+            <img
+              src={
+                currentPage + 1 < images.length
+                  ? images[currentPage + 1].url
+                  : images[currentPage].url
+              }
+              alt={`Page ${currentPage + 2}`}
+              className="w-1/2 h-full object-cover rounded-tr-lg rounded-br-lg"
+              onClick={(event) =>
+                handleImageMarker(event, currentPage + 1, true)
+              }
+            />
+            {markers.map(
+              (marker, index) =>
+                (marker.imageIndex === currentPage ||
+                  marker.imageIndex === currentPage + 1) && (
+                  <Draggable
+                    key={index}
+                    defaultPosition={{ x: marker.x, y: marker.y }}
+                    onStop={(e: any, data) => handleDragStop(e, data, index)}
                   >
-                    <span className="mr-2">{marker.product.slice(0, 3)}..</span>
-                    <button
-                      className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMarkers((prevMarkers) =>
-                          prevMarkers.filter((m) => m !== marker),
-                        );
-                      }}
+                    <div
+                      className="absolute flex justify-between items-center text-white text-sm px-3 p-1 rounded-full shadow-lg cursor-pointer"
+                      style={{ backgroundColor: marker.color }}
+                      onDoubleClick={() => handleMarkerClick(marker)}
                     >
-                      <span className="text-xs font-bold text-white">×</span>
-                    </button>
-                  </div>
-                </Draggable>
-              ),
-          )}
-        </motion.div>
-      </div>
+                      <span className="mr-2">
+                        {marker.product.slice(0, 3)}..
+                      </span>
+                      <button
+                        className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setMarkers((prevMarkers) =>
+                            prevMarkers.filter((m) => m !== marker),
+                          );
+                        }}
+                      >
+                        <span className="text-xs font-bold text-white">×</span>
+                      </button>
+                    </div>
+                  </Draggable>
+                ),
+            )}
+          </motion.div>
+        </div>
 
-      <div className="flex justify-between w-full mt-4">
-        <button
-          onClick={handlePrevPage}
-          disabled={currentPage === 0}
-          className={`px-4 py-2 text-white rounded ${
-            currentPage === 0
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-700"
-          }`}
-        >
-          Prev
-        </button>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage >= images.length - 1}
-          className={`px-4 py-2 text-white rounded ${
-            currentPage >= images.length - 2
-              ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-500 hover:bg-blue-700"
-          }`}
-        >
-          Next
-        </button>
-      </div>
+        <div className="flex justify-between w-full mt-4">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage === 0}
+            className={`px-4 py-2 text-white rounded ${
+              currentPage === 0
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-700"
+            }`}
+          >
+            Prev
+          </button>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage >= images.length - 1}
+            className={`px-4 py-2 text-white rounded ${
+              currentPage >= images.length - 2
+                ? "bg-gray-400 cursor-not-allowed"
+                : "bg-blue-500 hover:bg-blue-700"
+            }`}
+          >
+            Next
+          </button>
+        </div>
 
-      {selectedMarker && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg w-3/4 max-w-3xl shadow-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold">
-                {selectedMarker.product}
-              </h2>
+        {selectedMarker && (
+          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+            <div className="bg-white p-6 rounded-lg w-3/4 max-w-3xl shadow-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">
+                  {selectedMarker.product}
+                </h2>
+                <button
+                  onClick={() => setSelectedMarker(null)}
+                  className="text-gray-600 hover:text-gray-800"
+                >
+                  &times;
+                </button>
+              </div>
+              <img
+                src={selectedMarker.productImage}
+                alt={selectedMarker.product}
+                className="w-full h-48 object-contain mb-4"
+              />
+              <p>More details here...</p>
               <button
-                onClick={() => setSelectedMarker(null)}
-                className="text-gray-600 hover:text-gray-800"
+                onClick={handleRemoveMarker}
+                className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
               >
-                &times;
+                Remove Product
               </button>
             </div>
-            <img
-              src={selectedMarker.productImage}
-              alt={selectedMarker.product}
-              className="w-full h-48 object-contain mb-4"
-            />
-            <p>More details here...</p>
-            <button
-              onClick={handleRemoveMarker}
-              className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Remove Product
-            </button>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Page>
   );
 };
 

@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://proposed-hop-indonesian-magical.trycloudflare.com"
+application_url = "https://appearance-charity-wholesale-ears.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://proposed-hop-indonesian-magical.trycloudflare.com/auth/callback",
-  "https://proposed-hop-indonesian-magical.trycloudflare.com/auth/shopify/callback",
-  "https://proposed-hop-indonesian-magical.trycloudflare.com/api/auth/callback"
+  "https://appearance-charity-wholesale-ears.trycloudflare.com/auth/callback",
+  "https://appearance-charity-wholesale-ears.trycloudflare.com/auth/shopify/callback",
+  "https://appearance-charity-wholesale-ears.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
