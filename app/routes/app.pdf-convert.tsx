@@ -15,15 +15,13 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
 } from "@remix-run/node";
-import { useLoaderData, useNavigate } from "@remix-run/react";
+import { Form, useLoaderData, useNavigate } from "@remix-run/react";
 import path from "path";
-import PageFlip from "./app.pageflip";
 import { extractImagesFromPDF, uploadImage } from "app/utils/utils";
 import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import fs from "fs";
 import { PDFVALUES } from "app/constants/types";
-import { ReadableStreamDefaultController } from "stream/web";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session } = await authenticate.admin(request);
@@ -106,8 +104,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
   });
 
-  console.log(uploadedImages);
-
   const metafieldData = {
     namespace: "PDF",
     key: "fields" + Date.now(),
@@ -143,11 +139,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
-  // Define the GraphQL query with the correct structure and close brackets
   const GET_PDF_QUERY = `
     query GetPDFQuery {
       shop {
-        metafields(first: 5, namespace: "PDF") {
+        metafields(first: 15, namespace: "PDF") {
           edges {
             node {
               id
@@ -163,10 +158,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   `;
 
   try {
-    // Execute the GraphQL query
     const data = await admin.graphql(GET_PDF_QUERY);
 
-    // Check if the query returned any data
     if (!data) {
       console.error("Failed to fetch PDF metafield");
       return { error: "Failed to fetch PDF metafield." };
@@ -175,12 +168,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const pdfMetafields = response.data.shop.metafields.edges.map(
       (edge: any) => edge.node,
     );
-    console.log(pdfMetafields, "ARRAYS");
     if (!pdfMetafields.length) {
       console.warn("No PDF metafields found.");
       return { error: "No PDF metafields found." };
     }
-
     const actualResponse = pdfMetafields.map((pdf: any) => ({
       id: pdf.id.split("/")[pdf.id.split("/").length - 1],
       pdfName: pdf.jsonValue.pdfName,
@@ -196,21 +187,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const PDFConverter = () => {
-  // let {
-  //   pdfData: { jsonValue, id },
-  // } = useLoaderData<PDFVALUES>();
-
   const { pdfData } = useLoaderData<PDFVALUES>();
   console.log(pdfData);
-  const [selectedFileName, setSelectedFileName] = useState("");
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setSelectedFileName(file.name);
-    }
-  };
+
   const [files, setFiles] = useState<File[]>([]);
-  console.log(files, "FIELDas");
+  console.log(files, "files");
   const handleDropZoneDrop = useCallback(
     (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) =>
       setFiles((files) => [...files, ...acceptedFiles]),
@@ -239,8 +220,9 @@ const PDFConverter = () => {
   );
   const handlePdfDelete = (id: string) => {
     const confirmation = confirm("Are you sure you want to delete ? ");
+    const metaFieldId = `gid://shopify/Metafield/${id}`;
     if (confirmation) {
-      alert("deleted" + id);
+      alert("deleted" + metaFieldId);
     }
   };
 
@@ -249,17 +231,19 @@ const PDFConverter = () => {
   return (
     <>
       <Page backAction={{ content: "Settings", url: "#" }} title="PDF">
-        <div className="flex w-full items-center mt-2 justify-center ">
-          <div className="w-1/2 flex flex-col gap-3">
-            <DropZone onDrop={handleDropZoneDrop} variableHeight>
-              {uploadedFiles}
-              {fileUpload}
-            </DropZone>
-            {/* <div className="text-center">
+        <Form>
+          <div className="flex w-full items-center mt-2 justify-center ">
+            <div className="w-1/2 flex flex-col gap-3">
+              <DropZone onDrop={handleDropZoneDrop} variableHeight>
+                {uploadedFiles}
+                {fileUpload}
+              </DropZone>
+              {/* <div className="text-center">
               <Button variant="primary">Save</Button>
             </div> */}
+            </div>
           </div>
-        </div>
+        </Form>
 
         {/* Main section  */}
         <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">

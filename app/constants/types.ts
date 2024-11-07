@@ -27,6 +27,13 @@ interface ImageData {
   points?: Marker[];
 }
 
+export interface SINGLEPDF {
+  pdfData: {
+    images: ImageData[];
+    id: string;
+  };
+}
+
 export interface IMAGES {
   images: ImageData[];
   metaFieldId: string;
