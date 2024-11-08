@@ -5,9 +5,10 @@ import {
   Page,
   Button,
   Icon,
+  Spinner,
 } from "@shopify/polaris";
 import { DeleteIcon } from "@shopify/polaris-icons";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import {
   json,
   unstable_parseMultipartFormData,
@@ -281,10 +282,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const PDFConverter = () => {
   const { pdfData } = useLoaderData<PDFVALUES>();
   console.log(pdfData);
+  const storeAllID = pdfData.map((data) => data.id);
+  console.log(storeAllID, "Store all id");
+  console.log(pdfData, "PDF DATA");
   const fetcher = useFetcher();
-
+  const [deleteId, setDeleteId] = useState<any>();
+  const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
-  console.log(files, "files");
   const handleDropZoneDrop = useCallback(
     (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) => {
       setFiles((files) => [...files, ...acceptedFiles]);
@@ -296,6 +300,7 @@ const PDFConverter = () => {
         method: "post",
         encType: "multipart/form-data",
       });
+      setFileUploadTracker(true);
     },
     [],
   );
@@ -325,142 +330,77 @@ const PDFConverter = () => {
     formData.append("metafieldId", metaFieldId);
     if (confirmation) {
       fetcher.submit(formData, { method: "delete" });
+      setFileUploadTracker(false);
+      setDeleteId(id);
     }
   };
-
   const navigate = useNavigate();
+  console.log(fetcher, "Fetcher");
 
   return (
-    <>
-      <Page backAction={{ content: "Settings", url: "#" }} title="PDF">
-        <Form method="post">
-          <div className="flex w-full items-center mt-2 justify-center ">
-            <div className="w-1/2 flex flex-col gap-3">
-              <DropZone
-                onDrop={handleDropZoneDrop}
-                accept="application/pdf"
-                allowMultiple={false}
-                variableHeight
-              >
-                {uploadedFiles}
-                {fileUpload}
-              </DropZone>
-            </div>
+    <Page backAction={{ content: "Settings", url: "#" }} title="PDF">
+      <Form method="post">
+        <div className="flex w-full items-center mt-2 justify-center ">
+          <div className="w-1/2 flex flex-col gap-3">
+            <DropZone
+              onDrop={handleDropZoneDrop}
+              accept="application/pdf"
+              allowMultiple={false}
+              variableHeight
+              type="file"
+            >
+              {uploadedFiles}
+              {fileUpload}
+            </DropZone>
           </div>
-        </Form>
+        </div>
+      </Form>
 
-        {/* Main section  */}
-        <Form>
-          <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
-            {pdfData.map(({ pdfName, frontPage, id }) => (
-              <div className="border bg-white rounded-lg shadow-md overflow-hidden">
-                <div className="h-36 overflow-hidden relative">
-                  <img
-                    alt=""
-                    width="100%"
-                    height="100%"
-                    style={{
-                      objectFit: "cover",
-                      objectPosition: "center",
-                    }}
-                    src={frontPage}
-                  />
-                  <button
-                    type="submit"
-                    className="absolute  right-2 top-1"
-                    onClick={(e) => handlePdfDelete(id, e.currentTarget)}
-                  >
-                    <Icon source={DeleteIcon} tone="textCritical" />
-                  </button>
-                </div>
-                <div className="px-3 py-4 flex items-center justify-between">
-                  <span>{pdfName.slice(0, 10) + ".pdf"}</span>
-                  <Button
-                    variant="secondary"
-                    onClick={() => navigate(`/app/details/${id}`)}
-                    size="micro"
-                  >
-                    view details
-                  </Button>
-                </div>
+      {/* Main section  */}
+      <Form>
+        <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
+          {pdfData.map(({ pdfName, frontPage, id }) => (
+            <div className="border bg-white rounded-lg shadow-md overflow-hidden">
+              <div className="h-36 overflow-hidden relative">
+                {/* {storeAllID.includes(deleteId) ? "loading" : null} */}
+                <img
+                  alt=""
+                  width="100%"
+                  height="100%"
+                  style={{
+                    objectFit: "cover",
+                    objectPosition: "center",
+                  }}
+                  src={frontPage}
+                />
+                <button
+                  type="submit"
+                  className="absolute  right-2 top-1"
+                  onClick={(e) => handlePdfDelete(id, e.currentTarget)}
+                >
+                  <Icon source={DeleteIcon} tone="textCritical" />
+                </button>
               </div>
-            ))}
-          </div>
-        </Form>
-      </Page>
-    </>
-    // <div className="flex flex-col items-center w-full min-h-screen bg-gray-100 space-y-8 p-4">
-    //   {jsonValue && (
-    //     <div>
-    //       <h2 className="text-4xl font-bold mb-8 text-gray-800">
-    //         PDF to Image Converter
-    //       </h2>
-    //       <Form
-    //         method="post"
-    //         encType="multipart/form-data"
-    //         className="mb-8 w-full max-w-md space-y-4"
-    //       >
-    //         <input
-    //           type="text"
-    //           name="pdfName"
-    //           placeholder="Enter a name for your PDF"
-    //           className="w-full px-4 py-2 text-lg bg-blue-50 border border-blue-300 rounded-md focus:ring focus:ring-blue-500 focus:outline-none"
-    //         />
-    //         <div className="flex flex-col items-center justify-center w-full border-2 border-dashed border-blue-500 rounded-lg py-4">
-    //           <label htmlFor="file-upload" className="cursor-pointer">
-    //             <div className="flex flex-col items-center">
-    //               <svg
-    //                 xmlns="http://www.w3.org/2000/svg"
-    //                 className="w-12 h-12 text-blue-500 mb-2"
-    //                 fill="none"
-    //                 viewBox="0 0 24 24"
-    //                 stroke="currentColor"
-    //               >
-    //                 <path
-    //                   strokeLinecap="round"
-    //                   strokeLinejoin="round"
-    //                   strokeWidth={2}
-    //                   d="M12 4v16m8-8H4"
-    //                 />
-    //               </svg>
-    //               <span className="text-blue-500 font-medium">
-    //                 {selectedFileName || "Click to upload PDF"}
-    //               </span>
-    //             </div>
-    //           </label>
-    //           <input
-    //             id="file-upload"
-    //             type="file"
-    //             name="pdf"
-    //             accept="application/pdf"
-    //             onChange={handleFileChange}
-    //             required
-    //             className="hidden"
-    //           />
-    //         </div>
-
-    //         <button
-    //           type="submit"
-    //           className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold text-lg transition"
-    //         >
-    //           Submit
-    //         </button>
-    //       </Form>
-    //     </div>
-    //   )}
-
-    //   {jsonValue?.pdfName && (
-    //     <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden p-4 space-y-4">
-    //       <h3 className="text-xl font-semibold text-gray-700">
-    //         Uploaded PDF Name: {jsonValue.pdfName}
-    //       </h3>
-    //     </div>
-    //   )}
-
-    //   {jsonValue?.images && (
-    //     <PageFlip images={jsonValue.images} metaFieldId={id} />
-    //   )}
-    // </div>
+              <div className="px-3 py-4 flex items-center justify-between">
+                <span>{pdfName.slice(0, 10) + ".pdf"}</span>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate(`/app/details/${id}`)}
+                  size="micro"
+                >
+                  view details
+                </Button>
+              </div>
+            </div>
+          ))}
+          {fetcher.state === "submitting" && fileUploadTracker ? (
+            <div className="flex border bg-white rounded-lg shadow-md   items-center h-[200px] px-3 py-4 w-full justify-center">
+              <Spinner size="large" />
+            </div>
+          ) : null}
+        </div>
+      </Form>
+    </Page>
   );
 };
 
