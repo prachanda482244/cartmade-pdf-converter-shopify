@@ -15,60 +15,75 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useLoaderData, useNavigate } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useFetcher,
+  useLoaderData,
+  useNavigate,
+} from "@remix-run/react";
 import path from "path";
-import { extractImagesFromPDF, uploadImage } from "app/utils/utils";
+import { extractImagesFromPDF, sleep, uploadImage } from "app/utils/utils";
 import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import fs from "fs";
 import { PDFVALUES } from "app/constants/types";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
+  const { session, admin } = await authenticate.admin(request);
   const { shop, accessToken } = session;
+  if (request.method === "post" || request.method === "POST") {
+    const uploadHandler = unstable_createFileUploadHandler({
+      directory: path.join(process.cwd(), "public", "uploads"),
+      maxPartSize: 5_000_000,
+      file: ({ filename }) => filename,
+    });
 
-  const uploadHandler = unstable_createFileUploadHandler({
-    directory: path.join(process.cwd(), "public", "uploads"),
-    maxPartSize: 5_000_000,
-    file: ({ filename }) => filename,
-  });
-
-  const formData = await unstable_parseMultipartFormData(
-    request,
-    uploadHandler,
-  );
-
-  const pdf = formData.get("pdf") as File;
-  const pdfName = formData.get("pdfName") || pdf?.name || "Untitled PDF";
-
-  if (!pdf) return json({ error: "No file uploaded" }, { status: 400 });
-
-  const pdfPath = path.join(process.cwd(), "public", "uploads", pdf.name);
-  const imageUrls = await extractImagesFromPDF(pdfPath);
-  const readedUrls = [];
-
-  for (let url of imageUrls) {
-    const imagePath = path.join(process.cwd(), "public", url);
-    const imageBuffer = fs.readFileSync(imagePath);
-    readedUrls.push(imageBuffer);
-  }
-
-  const uploadedImages = [];
-
-  for (const imageBuffer of readedUrls) {
-    const resourceUrl = await uploadImage(
-      imageBuffer,
-      shop,
-      accessToken,
-      apiVersion,
+    const formData = await unstable_parseMultipartFormData(
+      request,
+      uploadHandler,
     );
-    uploadedImages.push(resourceUrl);
-  }
 
-  const createFileQuery = `mutation fileCreate($files: [FileCreateInput!]!) {
+    const pdf = formData.get("pdf") as File;
+    const pdfName = formData.get("pdfName") || pdf?.name || "Untitled PDF";
+    if (!pdf) return json({ error: "No file uploaded" }, { status: 400 });
+
+    const pdfPath = path.join(process.cwd(), "public", "uploads", pdf.name);
+    const imageUrls = await extractImagesFromPDF(pdfPath);
+    const readedUrls = [];
+
+    for (let url of imageUrls) {
+      const imagePath = path.join(process.cwd(), "public", url);
+      const imageBuffer = fs.readFileSync(imagePath);
+      readedUrls.push(imageBuffer);
+    }
+
+    const uploadedImages = [];
+
+    for (const imageBuffer of readedUrls) {
+      const resourceUrl = await uploadImage(
+        imageBuffer,
+        shop,
+        accessToken,
+        apiVersion,
+      );
+      uploadedImages.push(resourceUrl);
+    }
+
+    const createFileQuery = `mutation fileCreate($files: [FileCreateInput!]!) {
     fileCreate(files: $files) {
       files {
         alt
+         fileStatus
+        id
+        preview{
+        image{
+            url
+            id
+            height
+            width
+          }
+        }
       }
       userErrors {
         field
@@ -77,63 +92,112 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
   }`;
 
-  const createFileVariables = {
-    files: uploadedImages.map((url) => ({
-      alt: "alt-tag",
-      contentType: "IMAGE",
-      originalSource: url,
-    })),
-  };
-
-  const createFileQueryResult = await axios.post(
-    `https://${shop}/admin/api/${apiVersion}/graphql.json`,
-    {
-      query: createFileQuery,
-      variables: createFileVariables,
-    },
-    {
-      headers: {
-        "X-Shopify-Access-Token": `${accessToken}`,
-      },
-    },
-  );
-  imageUrls.forEach((url) => {
-    const imagePath = path.join(process.cwd(), "public", url);
-    fs.unlink(imagePath, (err) => {
-      if (err) console.error(`Error deleting file ${imagePath}:`, err);
-    });
-  });
-
-  const metafieldData = {
-    namespace: "PDF",
-    key: "fields" + Date.now(),
-    value: JSON.stringify({
-      pdfName: pdfName,
-
-      images: uploadedImages.map((img, index) => ({
-        id: index + 1,
-        url: img,
-        points: [],
+    const createFileVariables = {
+      files: uploadedImages.map((url) => ({
+        alt: "alt-tag",
+        contentType: "IMAGE",
+        originalSource: url,
       })),
-    }),
-    type: "json",
-    owner_resource: "shop",
-  };
-  const { data } = await axios.post(
-    `https://${shop}/admin/api/${apiVersion}/metafields.json`,
-    { metafield: metafieldData },
-    {
-      headers: {
-        "Content-Type": "application/json",
-        "X-Shopify-Access-Token": accessToken,
-      },
-    },
-  );
-  if (!data) {
-    return json({ error: "Failed to save metafield" }, { status: 400 });
-  }
+    };
 
-  return json({ images: uploadedImages, pdfName, metafiledData: data });
+    const createFileQueryResult = await axios.post(
+      `https://${shop}/admin/api/${apiVersion}/graphql.json`,
+      {
+        query: createFileQuery,
+        variables: createFileVariables,
+      },
+      {
+        headers: {
+          "X-Shopify-Access-Token": `${accessToken}`,
+        },
+      },
+    );
+
+    const fileIds = createFileQueryResult.data.data.fileCreate.files.map(
+      (file: any) => file.id,
+    );
+
+    const GET_FILE_QUERY = `
+    query GetFilePreviews($ids: [ID!]!) {
+      nodes(ids: $ids) {
+        ... on File {
+          fileStatus
+          preview {
+          image {
+            url
+          }
+        }
+      }
+    }
+  }
+  `;
+
+    await sleep(5000);
+    const response = await admin.graphql(GET_FILE_QUERY, {
+      variables: {
+        ids: fileIds,
+      },
+    });
+
+    const { data } = await response.json();
+    const metaFieldImage = data.nodes.map(
+      ({ preview }: any) => preview.image.url,
+    );
+    console.log(metaFieldImage, "Images");
+    // Delete temporary uploaded images
+    imageUrls.forEach((url) => {
+      const imagePath = path.join(process.cwd(), "public", url);
+      fs.unlink(imagePath, (err) => {
+        if (err) console.error(`Error deleting file ${imagePath}:`, err);
+      });
+    });
+
+    const metafieldData = {
+      namespace: "PDF",
+      key: "fields" + Date.now(),
+      value: JSON.stringify({
+        pdfName: pdfName,
+
+        images: metaFieldImage.map((img: string, index: number) => ({
+          id: index + 1,
+          url: img,
+          points: [],
+        })),
+      }),
+      type: "json",
+      owner_resource: "shop",
+    };
+
+    const { data: imageData } = await axios.post(
+      `https://${shop}/admin/api/${apiVersion}/metafields.json`,
+      { metafield: metafieldData },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": accessToken,
+        },
+      },
+    );
+
+    if (!data) {
+      return json({ error: "Failed to save metafield" }, { status: 400 });
+    }
+
+    return json({
+      images: uploadedImages,
+      pdfName,
+      metafiledData: imageData,
+    });
+  } else if (request.method === "DELETE" || request.method === "delete") {
+    const formData = await request.formData();
+    const metafieldId: any = formData.get("metafieldId");
+    console.log(metafieldId);
+    if (!metafieldId) {
+      return json({ error: "No metafieldId provided" }, { status: 400 });
+    }
+
+    return json({ message: "Metafield deleted successfully" });
+  }
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -189,16 +253,24 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const PDFConverter = () => {
   const { pdfData } = useLoaderData<PDFVALUES>();
   console.log(pdfData);
+  const fetcher = useFetcher();
 
   const [files, setFiles] = useState<File[]>([]);
   console.log(files, "files");
   const handleDropZoneDrop = useCallback(
-    (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) =>
-      setFiles((files) => [...files, ...acceptedFiles]),
+    (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) => {
+      setFiles((files) => [...files, ...acceptedFiles]);
+
+      const formData = new FormData();
+      acceptedFiles.forEach((file) => formData.append("pdf", file));
+
+      fetcher.submit(formData, {
+        method: "post",
+        encType: "multipart/form-data",
+      });
+    },
     [],
   );
-
-  const validImageTypes = ["application/pdf"];
 
   const fileUpload = !files.length && (
     <DropZone.FileUpload actionHint="Accepts PDF only" />
@@ -218,11 +290,13 @@ const PDFConverter = () => {
       ))}
     </LegacyStack>
   );
-  const handlePdfDelete = (id: string) => {
+  const handlePdfDelete = (id: string, target: any) => {
     const confirmation = confirm("Are you sure you want to delete ? ");
     const metaFieldId = `gid://shopify/Metafield/${id}`;
+    const formData = new FormData();
+    formData.append("metafieldId", metaFieldId);
     if (confirmation) {
-      alert("deleted" + metaFieldId);
+      fetcher.submit(formData, { method: "delete" });
     }
   };
 
@@ -231,55 +305,60 @@ const PDFConverter = () => {
   return (
     <>
       <Page backAction={{ content: "Settings", url: "#" }} title="PDF">
-        <Form>
+        <Form method="post">
           <div className="flex w-full items-center mt-2 justify-center ">
             <div className="w-1/2 flex flex-col gap-3">
-              <DropZone onDrop={handleDropZoneDrop} variableHeight>
+              <DropZone
+                onDrop={handleDropZoneDrop}
+                accept="application/pdf"
+                allowMultiple={false}
+                variableHeight
+              >
                 {uploadedFiles}
                 {fileUpload}
               </DropZone>
-              {/* <div className="text-center">
-              <Button variant="primary">Save</Button>
-            </div> */}
             </div>
           </div>
         </Form>
 
         {/* Main section  */}
-        <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
-          {pdfData.map(({ pdfName, frontPage, id }) => (
-            <div className="border bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="h-36 overflow-hidden relative">
-                <img
-                  alt=""
-                  width="100%"
-                  height="100%"
-                  style={{
-                    objectFit: "cover",
-                    objectPosition: "center",
-                  }}
-                  src={frontPage}
-                />
-                <button
-                  className="absolute  right-2 top-1"
-                  onClick={() => handlePdfDelete(id)}
-                >
-                  <Icon source={DeleteIcon} tone="textCritical" />
-                </button>
+        <Form>
+          <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
+            {pdfData.map(({ pdfName, frontPage, id }) => (
+              <div className="border bg-white rounded-lg shadow-md overflow-hidden">
+                <div className="h-36 overflow-hidden relative">
+                  <img
+                    alt=""
+                    width="100%"
+                    height="100%"
+                    style={{
+                      objectFit: "cover",
+                      objectPosition: "center",
+                    }}
+                    src={frontPage}
+                  />
+                  <button
+                    type="submit"
+                    className="absolute  right-2 top-1"
+                    onClick={(e) => handlePdfDelete(id, e.currentTarget)}
+                  >
+                    <Icon source={DeleteIcon} tone="textCritical" />
+                  </button>
+                </div>
+                <div className="px-3 py-4 flex items-center justify-between">
+                  <span>{pdfName.slice(0, 10) + ".pdf"}</span>
+                  <Button
+                    variant="secondary"
+                    onClick={() => navigate(`/app/details/${id}`)}
+                    size="micro"
+                  >
+                    view details
+                  </Button>
+                </div>
               </div>
-              <div className="px-3 py-4 flex items-center justify-between">
-                <span>{pdfName.slice(0, 10) + ".pdf"}</span>
-                <Button
-                  variant="secondary"
-                  onClick={() => navigate(`/app/details/${id}`)}
-                  size="micro"
-                >
-                  view details
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </Form>
       </Page>
     </>
     // <div className="flex flex-col items-center w-full min-h-screen bg-gray-100 space-y-8 p-4">
