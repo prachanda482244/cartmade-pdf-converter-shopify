@@ -143,7 +143,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const metaFieldImage = data.nodes.map(
       ({ preview }: any) => preview.image.url,
     );
-    console.log(metaFieldImage, "Images");
     // Delete temporary uploaded images
     imageUrls.forEach((url) => {
       const imagePath = path.join(process.cwd(), "public", url);
@@ -195,8 +194,35 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!metafieldId) {
       return json({ error: "No metafieldId provided" }, { status: 400 });
     }
+    try {
+      const DELETE_META_FIELD = `
+      mutation DeleteMetafield($id: ID!) {
+        metafieldDelete(input: { id: $id }) {
+          deletedId
+          userErrors {
+            field
+            message
+          }
+        }
+      }
+    `;
 
-    return json({ message: "Metafield deleted successfully" });
+      const response = await admin.graphql(DELETE_META_FIELD, {
+        variables: {
+          id: metafieldId,
+        },
+      });
+      const { data } = await response.json();
+      if (!data) {
+        return json({ error: "Failed to delete metafield" }, { status: 400 });
+      }
+      return json({ message: "Metafield deleted successfully" });
+    } catch (error: any) {
+      console.error(error, "Errors");
+      console.error(error?.body.errors, "Errorsssssssssssss");
+
+      return json({ message: "something went wrong" });
+    }
   }
 };
 
@@ -241,6 +267,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       pdfName: pdf.jsonValue.pdfName,
       frontPage: pdf.jsonValue.images[0]?.url,
       allImages: pdf.jsonValue.images,
+      key: pdf.key,
+      namespace: pdf.namespace,
     }));
 
     return { pdfData: actualResponse };
