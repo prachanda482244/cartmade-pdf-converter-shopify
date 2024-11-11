@@ -14,7 +14,6 @@ import axios from "axios";
 
 const PageFlip = ({ images, metaFieldId }: IMAGES) => {
   const fetcher = useFetcher();
-  const submitForm = useSubmit();
 
   const actionData = useActionData();
   console.log(actionData, "Action");
@@ -112,7 +111,8 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
       );
     }
   };
-  const handleSave = async (target: any) => {
+
+  const handleSave = async () => {
     console.log("Markers before saving:", markers);
 
     images.forEach((image) => {
@@ -140,22 +140,15 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
 
     console.log("Updated images:", images);
 
-    const settingData = {
-      images,
-      metaFieldId,
-    };
-    submitForm(target, {
-      action: "save",
-      method: "POST",
-    });
-
-    // const { data } = await axios.post(`/app/api/save-settings`, settingData);
-    // console.log(data, "Response data");
+    const formData = new FormData();
+    formData.append("images", JSON.stringify(images));
+    formData.append("metaFieldId", metaFieldId);
+    fetcher.submit(formData, { method: "post" });
   };
 
   return (
     <Page>
-      <Form method="post" onSubmit={(e) => handleSave(e.currentTarget)}>
+      <Form method="post" onSubmit={handleSave}>
         <div className="flex flex-col min-h-screen bg-gray-100">
           <div className="flex items-center justify-end py-1">
             <Button

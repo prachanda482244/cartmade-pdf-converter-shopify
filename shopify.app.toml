@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://generated-world-signal-alberta.trycloudflare.com"
+application_url = "https://energy-spin-munich-obligation.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://generated-world-signal-alberta.trycloudflare.com/auth/callback",
-  "https://generated-world-signal-alberta.trycloudflare.com/auth/shopify/callback",
-  "https://generated-world-signal-alberta.trycloudflare.com/api/auth/callback"
+  "https://energy-spin-munich-obligation.trycloudflare.com/auth/callback",
+  "https://energy-spin-munich-obligation.trycloudflare.com/auth/shopify/callback",
+  "https://energy-spin-munich-obligation.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

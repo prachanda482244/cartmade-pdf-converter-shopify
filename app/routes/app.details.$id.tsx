@@ -1,5 +1,5 @@
 import { json } from "@remix-run/react";
-import { authenticate } from "app/shopify.server";
+import { apiVersion, authenticate } from "app/shopify.server";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -7,6 +7,7 @@ import {
 } from "react-router";
 import { IMAGES, SINGLEPDF } from "app/constants/types";
 import PageFlip from "app/components/PageFlip";
+import axios from "axios";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -21,6 +22,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         id
         namespace
         key
+        value
         jsonValue
         type
       }
@@ -52,14 +54,63 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   }
 };
+
 export const action = async ({ request }: ActionFunctionArgs) => {
-  console.log("action");
-  return 1;
+  const {
+    session: { accessToken, shop },
+  } = await authenticate.admin(request);
+  const url = new URL(request.url);
+  const id = url.pathname.split("/").pop();
+  const formdata: any = await request.formData();
+  const images = formdata.get("images");
+
+  const { data: metafieldData } = await axios.get(
+    `https://${shop}/admin/api/${apiVersion}/metafields/${id}.json`,
+    {
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+      },
+    },
+  );
+
+  console.log(metafieldData, "GET METAFIELD");
+
+  const updatedData = {
+    ...metafieldData,
+    metafield: {
+      value: JSON.stringify({
+        images: images,
+      }),
+      type: "json",
+    },
+  };
+  // const { data } = await axios.put(
+  //   `https://${shop}/admin/api/${apiVersion}/metafields/${id}.json`,
+
+  //   updatedData,
+  //   {
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //       "X-Shopify-Access-Token": accessToken,
+  //     },
+  //   },
+  // );
+
+  // console.log(data, "updated metafield");
+  let data: any = [];
+  if (!data) {
+    console.warn("Failed to save metafield");
+    return { error: "Failed to save metafield" };
+  }
+  return {
+    success: true,
+    message: "metafield updated successfully",
+    metafieldData,
+  };
 };
 const DetailPage = () => {
   // const { pdfData } = useLoaderData<SINGLEPDF>();
   const { pdfData }: any = useLoaderData();
-  console.log(pdfData);
   return (
     <div>
       <PageFlip images={pdfData.images} metaFieldId={pdfData.id} />

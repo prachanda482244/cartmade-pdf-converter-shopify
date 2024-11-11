@@ -144,13 +144,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const metaFieldImage = data.nodes.map(
       ({ preview }: any) => preview.image.url,
     );
-    // Delete temporary uploaded images
-    imageUrls.forEach((url) => {
-      const imagePath = path.join(process.cwd(), "public", url);
-      fs.unlink(imagePath, (err) => {
-        if (err) console.error(`Error deleting file ${imagePath}:`, err);
-      });
-    });
 
     const metafieldData = {
       namespace: "PDF",
@@ -182,6 +175,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!data) {
       return json({ error: "Failed to save metafield" }, { status: 400 });
     }
+    // Delete temporary uploaded images
+
+    imageUrls.forEach((url) => {
+      const imagePath = path.join(process.cwd(), "public", url);
+      fs.unlink(imagePath, (err) => {
+        if (err) console.error(`Error deleting file ${imagePath}:`, err);
+      });
+    });
 
     return json({
       images: uploadedImages,
@@ -263,11 +264,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       console.warn("No PDF metafields found.");
       return { error: "No PDF metafields found." };
     }
+    console.log(pdfMetafields, "FUCKING METAFIELDD");
     const actualResponse = pdfMetafields.map((pdf: any) => ({
       id: pdf.id.split("/")[pdf.id.split("/").length - 1],
       pdfName: pdf.jsonValue.pdfName,
-      frontPage: pdf.jsonValue.images[0]?.url,
-      allImages: pdf.jsonValue.images,
+      frontPage: pdf.jsonValue?.images[0]?.url,
+      allImages: pdf.jsonValue?.images || [],
       key: pdf.key,
       namespace: pdf.namespace,
     }));
@@ -282,7 +284,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const PDFConverter = () => {
   const { pdfData } = useLoaderData<PDFVALUES>();
   console.log(pdfData);
-  const storeAllID = pdfData.map((data) => data.id);
+  const storeAllID = pdfData?.map((data) => data.id);
   console.log(storeAllID, "Store all id");
   console.log(pdfData, "PDF DATA");
   const fetcher = useFetcher();
@@ -359,7 +361,7 @@ const PDFConverter = () => {
       {/* Main section  */}
       <Form>
         <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
-          {pdfData.map(({ pdfName, frontPage, id }) => (
+          {pdfData?.map(({ pdfName, frontPage, id }) => (
             <div className="border bg-white rounded-lg shadow-md overflow-hidden">
               <div className="h-36 overflow-hidden relative">
                 {/* {storeAllID.includes(deleteId) ? "loading" : null} */}
@@ -382,7 +384,7 @@ const PDFConverter = () => {
                 </button>
               </div>
               <div className="px-3 py-4 flex items-center justify-between">
-                <span>{pdfName.slice(0, 10) + ".pdf"}</span>
+                <span>{pdfName?.slice(0, 10) + ".pdf"}</span>
                 <Button
                   variant="secondary"
                   onClick={() => navigate(`/app/details/${id}`)}
