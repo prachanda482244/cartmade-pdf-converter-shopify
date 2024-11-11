@@ -37,4 +37,5 @@ export interface SINGLEPDF {
 export interface IMAGES {
   images: ImageData[];
   metaFieldId: string;
+  pdfName: string;
 }

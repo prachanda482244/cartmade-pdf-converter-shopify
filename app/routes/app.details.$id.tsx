@@ -8,6 +8,7 @@ import {
 import { IMAGES, SINGLEPDF } from "app/constants/types";
 import PageFlip from "app/components/PageFlip";
 import axios from "axios";
+import { error } from "console";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
@@ -56,64 +57,64 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const {
-    session: { accessToken, shop },
-  } = await authenticate.admin(request);
-  const url = new URL(request.url);
-  const id = url.pathname.split("/").pop();
-  const formdata: any = await request.formData();
-  const images = formdata.get("images");
+  if (request.method === "post") {
+    const {
+      session: { accessToken, shop },
+      admin,
+      session,
+    } = await authenticate.admin(request);
+    const url = new URL(request.url);
+    const id = Number(url.pathname.split("/").pop());
+    const formdata: any = await request.formData();
+    const images = formdata.get("images");
+    const pdfName = formdata.get("pdfName");
+    console.log(images, "IMAGEs");
+    console.log(typeof images === "string", "TYPe oF IMAGEs");
+    console.log(pdfName, "NAMEs");
+    if (typeof images !== "string") {
+      return {
+        error: "Invalid image data. Please upload valid images.",
+        images,
+        pdfName,
+      };
+    } else {
+      const metafield = new admin.rest.resources.Metafield({
+        session: session,
+      });
+      metafield.id = id;
+      metafield.value = JSON.stringify({
+        pdfName: pdfName || "Undefined",
+        images: JSON.parse(images) || [],
+      });
+      metafield.type = "json";
 
-  const { data: metafieldData } = await axios.get(
-    `https://${shop}/admin/api/${apiVersion}/metafields/${id}.json`,
-    {
-      headers: {
-        "X-Shopify-Access-Token": accessToken,
-      },
-    },
-  );
+      await metafield.save({
+        update: true,
+      });
+      // console.log(metafield, "metafield after update");
 
-  console.log(metafieldData, "GET METAFIELD");
-
-  const updatedData = {
-    ...metafieldData,
-    metafield: {
-      value: JSON.stringify({
-        images: images,
-      }),
-      type: "json",
-    },
-  };
-  // const { data } = await axios.put(
-  //   `https://${shop}/admin/api/${apiVersion}/metafields/${id}.json`,
-
-  //   updatedData,
-  //   {
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //       "X-Shopify-Access-Token": accessToken,
-  //     },
-  //   },
-  // );
-
-  // console.log(data, "updated metafield");
-  let data: any = [];
-  if (!data) {
-    console.warn("Failed to save metafield");
-    return { error: "Failed to save metafield" };
+      if (!metafield) {
+        console.warn("Failed to save metafield");
+        return { error: "Failed to save metafield" };
+      }
+      return {
+        success: true,
+        message: "metafield updated successfully",
+        metafield,
+      };
+    }
   }
-  return {
-    success: true,
-    message: "metafield updated successfully",
-    metafieldData,
-  };
 };
 const DetailPage = () => {
   // const { pdfData } = useLoaderData<SINGLEPDF>();
   const { pdfData }: any = useLoaderData();
   return (
     <div>
-      <PageFlip images={pdfData.images} metaFieldId={pdfData.id} />
+      <PageFlip
+        pdfName={pdfData.pdfName}
+        images={pdfData.images}
+        metaFieldId={pdfData.id}
+      />
     </div>
   );
 };

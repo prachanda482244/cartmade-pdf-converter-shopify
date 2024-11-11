@@ -12,7 +12,7 @@ import axios from "axios";
 //   return { exampleData: "Example metafield data" };
 // }
 
-const PageFlip = ({ images, metaFieldId }: IMAGES) => {
+const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   const fetcher = useFetcher();
 
   const actionData = useActionData();
@@ -27,11 +27,13 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
     "#33C7FF",
     "#6A33FF",
   ];
-
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [animate, setAnimate] = useState<boolean>(false);
-  const [markers, setMarkers] = useState<Marker[]>([]);
+  const [markers, setMarkers] = useState<Marker[]>(
+    images.find((image: any) => image?.points.length > 0)?.points || [],
+  );
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
+  console.log(markers, "MARKERZ");
   const handleNextPage = () => {
     if (currentPage < images.length - 2) {
       setAnimate(true);
@@ -143,6 +145,8 @@ const PageFlip = ({ images, metaFieldId }: IMAGES) => {
     const formData = new FormData();
     formData.append("images", JSON.stringify(images));
     formData.append("metaFieldId", metaFieldId);
+    formData.append("pdfName", pdfName);
+
     fetcher.submit(formData, { method: "post" });
   };
 

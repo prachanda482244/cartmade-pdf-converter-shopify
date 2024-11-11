@@ -265,15 +265,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return { error: "No PDF metafields found." };
     }
     console.log(pdfMetafields, "FUCKING METAFIELDD");
+
     const actualResponse = pdfMetafields.map((pdf: any) => ({
       id: pdf.id.split("/")[pdf.id.split("/").length - 1],
-      pdfName: pdf.jsonValue.pdfName,
-      frontPage: pdf.jsonValue?.images[0]?.url,
-      allImages: pdf.jsonValue?.images || [],
+      pdfName:
+        pdf.jsonValue.pdfName !== null
+          ? pdf.jsonValue?.pdfName
+          : "Untitled Document",
+      frontPage:
+        pdf.jsonValue.images !== null ? pdf.jsonValue?.images[0]?.url : "",
+      allImages: pdf.jsonValue.images !== null ? pdf.jsonValue?.images : [],
       key: pdf.key,
       namespace: pdf.namespace,
     }));
 
+    console.log(actualResponse, "ACtual response");
     return { pdfData: actualResponse };
   } catch (error) {
     console.error("Error fetching PDF metafields:", error);
