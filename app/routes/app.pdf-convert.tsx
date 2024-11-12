@@ -294,14 +294,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const PDFConverter = () => {
+  const loader = useLoaderData();
+  console.log(loader, "LOADER");
   const { pdfData } = useLoaderData<PDFVALUES>();
   console.log(pdfData, "PDF DATA");
-  const actionData = useActionData();
-  console.log(actionData, "Actin");
   const fetcher = useFetcher();
   const [deleteId, setDeleteId] = useState<any>();
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
 
   // const [openPdf, setOpenPdf] = useState<boolean>(false);
   const handleDropZoneDrop = useCallback(
@@ -315,10 +316,23 @@ const PDFConverter = () => {
         method: "post",
         encType: "multipart/form-data",
       });
+      // simulateProgress();
+
       setFileUploadTracker(true);
     },
     [],
   );
+
+  // const simulateProgress = () => {
+  //   let progress = 0;
+  //   const interval = setInterval(() => {
+  //     progress += 5;
+  //     setUploadProgress(progress);
+  //     if (progress >= 100) {
+  //       clearInterval(interval);
+  //     }
+  //   }, 700);
+  // };
 
   const fileUpload = !files.length && (
     <DropZone.FileUpload actionHint="Accepts PDF only" />
@@ -331,6 +345,7 @@ const PDFConverter = () => {
           <LegacyStack alignment="center" key={index}>
             <Text variant="bodySm" alignment="center" as="p">
               uploading {file.name}
+              {/* {uploadProgress}% */}
             </Text>
           </LegacyStack>
         </div>
@@ -347,6 +362,7 @@ const PDFConverter = () => {
       setFileUploadTracker(false);
       setDeleteId(id);
     }
+    setFiles([]);
   };
   const navigate = useNavigate();
 
