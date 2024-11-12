@@ -1,21 +1,17 @@
 import { json } from "@remix-run/react";
-import { apiVersion, authenticate } from "app/shopify.server";
+import { authenticate } from "app/shopify.server";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
   useLoaderData,
 } from "react-router";
-import { IMAGES, SINGLEPDF } from "app/constants/types";
 import PageFlip from "app/components/PageFlip";
-import axios from "axios";
-import { error } from "console";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const id = url.pathname.split("/").pop();
   const { admin } = await authenticate.admin(request);
   const metafieldId = `gid://shopify/Metafield/${id}`;
-  console.log("Loader: id fetched from URL", id);
   const META_FIELD_QUERY = `
   query getMetafield($id: ID!) {
     node(id: $id) {
@@ -57,20 +53,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  if (request.method === "post") {
-    const {
-      session: { accessToken, shop },
-      admin,
-      session,
-    } = await authenticate.admin(request);
+  if (request.method === "POST") {
+    const { admin, session } = await authenticate.admin(request);
     const url = new URL(request.url);
     const id = Number(url.pathname.split("/").pop());
     const formdata: any = await request.formData();
     const images = formdata.get("images");
     const pdfName = formdata.get("pdfName");
-    console.log(images, "IMAGEs");
-    console.log(typeof images === "string", "TYPe oF IMAGEs");
-    console.log(pdfName, "NAMEs");
+    // console.log(pdfName, "PDF NAME");
+    // console.log(images, "IMAGES");
+    // console.log(typeof images, "TYPES OF IMAGES");
     if (typeof images !== "string") {
       return {
         error: "Invalid image data. Please upload valid images.",
@@ -104,9 +96,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       };
     }
   }
+  return null;
 };
 const DetailPage = () => {
-  // const { pdfData } = useLoaderData<SINGLEPDF>();
   const { pdfData }: any = useLoaderData();
   return (
     <div>

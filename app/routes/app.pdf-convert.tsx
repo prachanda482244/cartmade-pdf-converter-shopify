@@ -33,7 +33,8 @@ import { PDFVALUES } from "app/constants/types";
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop, accessToken } = session;
-  if (request.method === "post" || request.method === "POST") {
+  console.log(request.method, "METHOD");
+  if (request.method === "POST" || request.method === "post") {
     const uploadHandler = unstable_createFileUploadHandler({
       directory: path.join(process.cwd(), "public", "uploads"),
       maxPartSize: 5_000_000,
@@ -179,20 +180,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     imageUrls.forEach((url) => {
       const imagePath = path.join(process.cwd(), "public", url);
+      console.log(imagePath, "PATH");
       fs.unlink(imagePath, (err) => {
         if (err) console.error(`Error deleting file ${imagePath}:`, err);
       });
     });
 
+    fs.unlink(pdfPath, (err) => {
+      if (err) console.error(`Error deleting file ${pdfPath}:`, err);
+    });
+
     return json({
-      images: uploadedImages,
-      pdfName,
-      metafiledData: imageData,
+      success: true,
+      message: "PDF uploaded successfully",
+      imageData,
     });
   } else if (request.method === "DELETE" || request.method === "delete") {
     const formData = await request.formData();
     const metafieldId: any = formData.get("metafieldId");
-    console.log(metafieldId);
     if (!metafieldId) {
       return json({ error: "No metafieldId provided" }, { status: 400 });
     }
@@ -218,14 +223,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       if (!data) {
         return json({ error: "Failed to delete metafield" }, { status: 400 });
       }
-      return json({ message: "Metafield deleted successfully" });
+      return { message: "Metafield deleted successfully" };
     } catch (error: any) {
       console.error(error, "Errors");
       console.error(error?.body.errors, "Errorsssssssssssss");
 
-      return json({ message: "something went wrong" });
+      return { message: "something went wrong" };
     }
   }
+  return json({ error: "Unknown method" }, { status: 400 });
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -264,7 +270,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       console.warn("No PDF metafields found.");
       return { error: "No PDF metafields found." };
     }
-    console.log(pdfMetafields, "FUCKING METAFIELDD");
+    // console.log(pdfMetafields, "FUCKING METAFIELDD");
 
     const actualResponse = pdfMetafields.map((pdf: any) => ({
       id: pdf.id.split("/")[pdf.id.split("/").length - 1],
@@ -279,7 +285,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       namespace: pdf.namespace,
     }));
 
-    console.log(actualResponse, "ACtual response");
+    // console.log(actualResponse, "ACtual response");
     return { pdfData: actualResponse };
   } catch (error) {
     console.error("Error fetching PDF metafields:", error);
@@ -289,14 +295,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const PDFConverter = () => {
   const { pdfData } = useLoaderData<PDFVALUES>();
-  console.log(pdfData);
-  const storeAllID = pdfData?.map((data) => data.id);
-  console.log(storeAllID, "Store all id");
   console.log(pdfData, "PDF DATA");
+  const actionData = useActionData();
+  console.log(actionData, "Actin");
   const fetcher = useFetcher();
   const [deleteId, setDeleteId] = useState<any>();
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
+
+  // const [openPdf, setOpenPdf] = useState<boolean>(false);
   const handleDropZoneDrop = useCallback(
     (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) => {
       setFiles((files) => [...files, ...acceptedFiles]);
@@ -322,9 +329,8 @@ const PDFConverter = () => {
       {files.map((file, index) => (
         <div className="p-4 text-center flex items-center justify-center">
           <LegacyStack alignment="center" key={index}>
-            {file.name}{" "}
             <Text variant="bodySm" alignment="center" as="p">
-              {file.size} bytes
+              uploading {file.name}
             </Text>
           </LegacyStack>
         </div>
@@ -343,13 +349,21 @@ const PDFConverter = () => {
     }
   };
   const navigate = useNavigate();
-  console.log(fetcher, "Fetcher");
 
   return (
-    <Page backAction={{ content: "Settings", url: "#" }} title="PDF">
+    <Page
+      backAction={{ content: "Settings", url: "/app" }}
+      // primaryAction={{
+      //   content: !openPdf ? "Add new pdf" : "Close pdf",
+      //   onAction: () => {
+      //     filei;
+      //   },
+      // }}
+      title="PDFs"
+    >
       <Form method="post">
         <div className="flex w-full items-center mt-2 justify-center ">
-          <div className="w-1/2 flex flex-col gap-3">
+          <div className="w-full flex flex-col gap-3">
             <DropZone
               onDrop={handleDropZoneDrop}
               accept="application/pdf"
@@ -368,9 +382,19 @@ const PDFConverter = () => {
       <Form>
         <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
           {pdfData?.map(({ pdfName, frontPage, id }) => (
-            <div className="border bg-white rounded-lg shadow-md overflow-hidden">
-              <div className="h-36 overflow-hidden relative">
-                {/* {storeAllID.includes(deleteId) ? "loading" : null} */}
+            <div
+              className="border bg-white rounded-lg cursor-pointer shadow-md overflow-hidden"
+              onClick={() => navigate(`/app/details/${id}`)}
+            >
+              <div className="h-36  overflow-hidden relative">
+                {id === deleteId ? (
+                  <div className="absolute h-full w-full bg-white flex items-center justify-center">
+                    <p className="flex flex-col gap-2">
+                      <Spinner size="large" />
+                    </p>
+                  </div>
+                ) : null}
+
                 <img
                   alt=""
                   width="100%"
@@ -389,21 +413,26 @@ const PDFConverter = () => {
                   <Icon source={DeleteIcon} tone="textCritical" />
                 </button>
               </div>
-              <div className="px-3 py-4 flex items-center justify-between">
+              <div className="px-3 py-4 flex items-center justify-center">
                 <span>{pdfName?.slice(0, 10) + ".pdf"}</span>
-                <Button
+                {/* <Button
                   variant="secondary"
                   onClick={() => navigate(`/app/details/${id}`)}
                   size="micro"
                 >
                   view details
-                </Button>
+                </Button> */}
               </div>
             </div>
           ))}
           {fetcher.state === "submitting" && fileUploadTracker ? (
             <div className="flex border bg-white rounded-lg shadow-md   items-center h-[200px] px-3 py-4 w-full justify-center">
-              <Spinner size="large" />
+              <p className="flex flex-col gap-2 items-center">
+                <span className="font-semibold animate-pulse w-full p-1 ">
+                  Uploading pdf
+                </span>
+                <Spinner size="large" />
+              </p>
             </div>
           ) : null}
         </div>
