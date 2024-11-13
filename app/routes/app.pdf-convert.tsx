@@ -16,15 +16,14 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
 } from "@remix-run/node";
-import {
-  Form,
-  useActionData,
-  useFetcher,
-  useLoaderData,
-  useNavigate,
-} from "@remix-run/react";
+import { Form, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import path from "path";
-import { extractImagesFromPDF, sleep, uploadImage } from "app/utils/utils";
+import {
+  extractImagesFromPDF,
+  generateRandomString,
+  sleep,
+  uploadImage,
+} from "app/utils/utils";
 import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import fs from "fs";
@@ -47,7 +46,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
 
     const pdf = formData.get("pdf") as File;
-    const pdfName = formData.get("pdfName") || pdf?.name || "Untitled PDF";
+    const pdfName: any = formData.get("pdfName") || pdf?.name || "Untitled PDF";
     if (!pdf) return json({ error: "No file uploaded" }, { status: 400 });
 
     const pdfPath = path.join(process.cwd(), "public", "uploads", pdf.name);
@@ -146,9 +145,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       ({ preview }: any) => preview.image.url,
     );
 
+    const key = generateRandomString();
+
     const metafieldData = {
       namespace: "PDF",
-      key: "fields" + Date.now(),
+      key: key,
       value: JSON.stringify({
         pdfName: pdfName,
 
@@ -304,8 +305,7 @@ const PDFConverter = () => {
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [showCopyToClipboard, setShowCopyToClipboard] =
-    useState<boolean>(false);
+
   // const [openPdf, setOpenPdf] = useState<boolean>(false);
   const handleDropZoneDrop = useCallback(
     (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) => {
@@ -432,7 +432,11 @@ const PDFConverter = () => {
               </div>
               <div className="px-3 py-4 flex items-center justify-center">
                 <p className="flex flex-col w-full items-center gap-2">
-                  <span>{pdfName?.slice(0, 10) + ".pdf"}</span>
+                  <span>
+                    {id === deleteId
+                      ? "Removing pdf"
+                      : pdfName?.slice(0, 10) + ".pdf"}
+                  </span>
                   <p
                     className="flex items-center gap-2 cursor-pointer"
                     onClick={() => handleCopyKey(key)}
@@ -455,7 +459,7 @@ const PDFConverter = () => {
             </div>
           ))}
           {fetcher.state === "submitting" && fileUploadTracker ? (
-            <div className="flex border bg-white rounded-lg shadow-md   items-center h-[200px] px-3 py-4 w-full justify-center">
+            <div className="flex border bg-white rounded-lg shadow-md   items-center h-[230px] px-3 py-4 w-full justify-center">
               <p className="flex flex-col gap-2 items-center">
                 <span className="font-semibold animate-pulse w-full p-1 ">
                   Uploading pdf

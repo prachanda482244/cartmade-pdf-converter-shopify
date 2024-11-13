@@ -1,82 +1,79 @@
 <script src="{{ 'main.js' | asset_url }}" defer="defer"></script>
 {{ 'main.css' | asset_url | stylesheet_tag }}
 {% assign pdfMetafields = shop.metafields.PDF %}
-
-{% assign pdfMetafield = pdfMetafields.block.settings.metafield_key %}
+{% assign pdfMetafield = pdfMetafields[block.settings.metafield_key] %}
 {% assign pdfData = pdfMetafield.value | parse_json %}
-{% assign images = pdfData.images %}
+{% assign array_length = pdfData.images | size %}
+{{ array_length }}
 
-{% for image in pdfData.images %}
-{% comment %} {{ image }} {% endcomment %}
-
-{% comment %} <br> {% endcomment %}
-{% for points in image.points %}
-{% comment %} {{ points }} {% endcomment %}
-{% endfor %}
-{% endfor %}
+<p>Hello prach</p>
 
 
-<h1>
-
-    KEys:
-    {{ block.settings.metafield_key }}
-</h1>
-<div class="body">
+{% assign start = 1 %}
+{% assign end = 10 %}
+{% assign increment = 2 %}
+{% assign i = start %}
+{% for x in (start..end) %}
+{% if i <= end %} {{ i }} {% assign nextIndex=i | plus: 1 %} n: {{nextIndex}} {% assign i=i | plus: increment %} {%
+    endif %} {% endfor %} <div class="body">
     <div class="book">
-        {% for key in pdfMetafields %}
-        {% assign pdfMetafield = pdfMetafields[key[0]] %}
-        {% assign pdfData = pdfMetafield.value | parse_json %}
         <div class="page">
             <div class="front cover">
                 {{ pdfData.pdfName }}
             </div>
             <div class="back">
-                <img src="https://i.pinimg.com/originals/8e/4a/24/8e4a24a655d3a7ff7a364d7496dd0d38.jpg" alt="Img 1">
+                <img src="{{ pdfData.images[0].url }}" alt="Img 1">
             </div>
         </div>
 
-
-        {% for image in pdfData.images %}
-
+        {% assign index = 1 %}
+        {% for i in (1..array_length) %}
+        {% assign nextIndex = index | plus: 1 %}
+        {% if index == array_length %}{% break %}{% endif %}
         <div class="page">
             <div class="front">
-                <img src="{{image.url}}" alt="Img 1">
+                <img src="{{ pdfData.images[index].url }}" alt="Img {{ index }}">
             </div>
+            {% if nextIndex == array_length %}
+            <!-- Cover page after the loop -->
+            <div class="page">
+                <div class="front">
+                    <img src="https://picsum.photos/id/1073/600/600" alt="Img 2">
+                </div>
+                <div class="back cover">
+                    <p>
+                        <small>Book Flip</small>
+                    </p>
+                </div>
+            </div>
+
+            {% break %}
+            {% endif %}
             <div class="back">
-                <img src="{{image.url}}" alt="Img 1">
+                <img src="{{ pdfData.images[nextIndex].url }}" alt="Img {{ nextIndex }}">
             </div>
         </div>
 
+        {% assign index = nextIndex | plus:1 %}
         {% endfor %}
 
-        <div class="page">
-            <div class="front">
-                <img src="https://picsum.photos/id/1073/600/600" alt="Img 2">
-            </div>
-            <div class="back cover">
-                <p>
-                    <small>Book Flip</small>
-                </p>
-            </div>
-            {% endfor %}
 
-        </div>
     </div>
-</div>
-<script src="../assets/js/main.js"></>
+    </div>
 
+    <script src="../assets/js/main.js"></script>
 
-        {% schema %}
+    {% schema %}
     {
-        "name": "PDF-CONVERTER",
-            "target": "section",
-                "settings": [
-                    {
-                        "type": "text",
-                        "id": "metafield_key",
-                        "label": "PDF KEY",
-                        "default": "PDF KEY"
-                    }
-                ]
+    "name": "PDF-CONVERTER",
+    "target": "section",
+    "settings": [
+    {
+    "type": "text",
+    "id": "metafield_key",
+    "label": "PDF KEY",
+    "default": "PDF KEY"
+    }
+    ]
     }
     {% endschema %}
