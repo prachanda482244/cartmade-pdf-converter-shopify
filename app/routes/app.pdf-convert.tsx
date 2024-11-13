@@ -303,7 +303,9 @@ const PDFConverter = () => {
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
-
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [showCopyToClipboard, setShowCopyToClipboard] =
+    useState<boolean>(false);
   // const [openPdf, setOpenPdf] = useState<boolean>(false);
   const handleDropZoneDrop = useCallback(
     (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) => {
@@ -323,6 +325,14 @@ const PDFConverter = () => {
     [],
   );
 
+  const handleCopyKey = (key: string) => {
+    navigator.clipboard.writeText(key).then(() => {
+      setCopiedKey(key);
+      setTimeout(() => {
+        setCopiedKey(null);
+      }, 2000);
+    });
+  };
   // const simulateProgress = () => {
   //   let progress = 0;
   //   const interval = setInterval(() => {
@@ -367,16 +377,7 @@ const PDFConverter = () => {
   const navigate = useNavigate();
 
   return (
-    <Page
-      backAction={{ content: "Settings", url: "/app" }}
-      // primaryAction={{
-      //   content: !openPdf ? "Add new pdf" : "Close pdf",
-      //   onAction: () => {
-      //     filei;
-      //   },
-      // }}
-      title="PDFs"
-    >
+    <Page backAction={{ content: "Settings", url: "/app" }} title="PDFs">
       <Form method="post">
         <div className="flex w-full items-center mt-2 justify-center ">
           <div className="w-full flex flex-col gap-3">
@@ -397,12 +398,12 @@ const PDFConverter = () => {
       {/* Main section  */}
       <Form>
         <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
-          {pdfData?.map(({ pdfName, frontPage, id }) => (
-            <div
-              className="border bg-white rounded-lg cursor-pointer shadow-md overflow-hidden"
-              onClick={() => navigate(`/app/details/${id}`)}
-            >
-              <div className="h-36  overflow-hidden relative">
+          {pdfData?.map(({ pdfName, frontPage, id, key }) => (
+            <div className="border bg-white rounded-lg cursor-pointer shadow-md overflow-hidden">
+              <div
+                onClick={() => navigate(`/app/details/${id}`)}
+                className="h-36  overflow-hidden relative"
+              >
                 {id === deleteId ? (
                   <div className="absolute h-full w-full bg-white flex items-center justify-center">
                     <p className="flex flex-col gap-2">
@@ -430,7 +431,19 @@ const PDFConverter = () => {
                 </button>
               </div>
               <div className="px-3 py-4 flex items-center justify-center">
-                <span>{pdfName?.slice(0, 10) + ".pdf"}</span>
+                <p className="flex flex-col w-full items-center gap-2">
+                  <span>{pdfName?.slice(0, 10) + ".pdf"}</span>
+                  <p
+                    className="flex items-center gap-2 cursor-pointer"
+                    onClick={() => handleCopyKey(key)}
+                  >
+                    <span className="p-1 relative px-2 shadow-md text-xs text-blue-500 rounded-md cursor-pointer hover:bg-blue-100 capitalize transition-colors">
+                      {copiedKey === key
+                        ? "copied to clipboard"
+                        : "Copy PDF key "}
+                    </span>
+                  </p>
+                </p>
                 {/* <Button
                   variant="secondary"
                   onClick={() => navigate(`/app/details/${id}`)}

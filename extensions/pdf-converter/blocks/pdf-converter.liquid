@@ -2,64 +2,52 @@
 {{ 'main.css' | asset_url | stylesheet_tag }}
 {% assign pdfMetafields = shop.metafields.PDF %}
 
-{% for key in pdfMetafields %}
-{{ key[1].value }}
+{% assign pdfMetafield = pdfMetafields.block.settings.metafield_key %}
+{% assign pdfData = pdfMetafield.value | parse_json %}
+{% assign images = pdfData.images %}
 
+{% for image in pdfData.images %}
+{% comment %} {{ image }} {% endcomment %}
 
+{% comment %} <br> {% endcomment %}
+{% for points in image.points %}
+{% comment %} {{ points }} {% endcomment %}
+{% endfor %}
 {% endfor %}
 
-{% comment %} {{ pdfMetafields.fields1731402338060 }} {% endcomment %}
 
+<h1>
 
+    KEys:
+    {{ block.settings.metafield_key }}
+</h1>
 <div class="body">
     <div class="book">
+        {% for key in pdfMetafields %}
+        {% assign pdfMetafield = pdfMetafields[key[0]] %}
+        {% assign pdfData = pdfMetafield.value | parse_json %}
         <div class="page">
             <div class="front cover">
-                Dukeshill Book
+                {{ pdfData.pdfName }}
             </div>
             <div class="back">
                 <img src="https://i.pinimg.com/originals/8e/4a/24/8e4a24a655d3a7ff7a364d7496dd0d38.jpg" alt="Img 1">
             </div>
         </div>
 
-        <div class="page">
-            <div class="front">
-                <img src="https://i.pinimg.com/736x/6b/0a/ff/6b0aff630f17678b9b3924db160da4f8.jpg" alt="Img 1">
-                <button>Prev</button>
-            </div>
-            <div class="back">
-                <img src="https://i.pinimg.com/736x/b2/6c/57/b26c57c6ee933c0aa7c03525c76d49f1.jpg" alt="Img 1">
-                <button>Next</button>
 
-            </div>
-        </div>
+        {% for image in pdfData.images %}
 
         <div class="page">
             <div class="front">
-                <img src="https://i.pinimg.com/736x/fa/0c/86/fa0c86f585af82067f4e0a4d7fd06ae6.jpg" alt="Img 1">
+                <img src="{{image.url}}" alt="Img 1">
             </div>
             <div class="back">
-                <img src="https://picsum.photos/id/24/600/600" alt="Img 1">
+                <img src="{{image.url}}" alt="Img 1">
             </div>
         </div>
 
-        <div class="page">
-            <div class="front">
-                <img src="https://picsum.photos/id/24/600/600" alt="Img 1">
-            </div>
-            <div class="back">
-                <img src="https://picsum.photos/id/24/600/600" alt="Img 1">
-            </div>
-        </div>
-
-        <div class="page">
-            <div class="front">
-                <img src="https://picsum.photos/id/24/600/600" alt="Img 1">
-            </div>
-            <div class="back">
-                <img src="https://picsum.photos/id/24/600/600" alt="Img 1">
-            </div>
-        </div>
+        {% endfor %}
 
         <div class="page">
             <div class="front">
@@ -70,18 +58,25 @@
                     <small>Book Flip</small>
                 </p>
             </div>
+            {% endfor %}
+
         </div>
-        <script src="../assets/js/main.js"></>
-    </div >
+    </div>
+</div>
+<script src="../assets/js/main.js"></>
 
 
-                {% schema %}
-            {
-                "name": "PDF-CONVERTER",
-                    "target": "section",
-                        "settings": [
-                            { "type": "product", "id": "product", "label": "product", "autofill": true }
-
-                        ]
-            }
-            {% endschema %}
+        {% schema %}
+    {
+        "name": "PDF-CONVERTER",
+            "target": "section",
+                "settings": [
+                    {
+                        "type": "text",
+                        "id": "metafield_key",
+                        "label": "PDF KEY",
+                        "default": "PDF KEY"
+                    }
+                ]
+    }
+    {% endschema %}

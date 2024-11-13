@@ -3,6 +3,7 @@ export interface PDFVALUES {
     id: string;
     pdfName: string;
     frontPage: string;
+    key: string;
     allImages: {
       id: string;
       url: string;
