@@ -1,10 +1,20 @@
+{{ 'https://cdn.tailwindcss.com' | script_tag }}
+
 <script src="{{ 'main.js' | asset_url }}" defer="defer"></script>
+
 {{ 'main.css' | asset_url | stylesheet_tag }}
 {% assign pdfMetafields = shop.metafields.PDF %}
 {% assign pdfMetafield = pdfMetafields[block.settings.metafield_key] %}
 {% assign pdfData = pdfMetafield.value | parse_json %}
 {% assign array_length = pdfData.images | size | minus: 1%}
 {{ array_length }}
+{% assign images = pdfData.images[0] %}
+{% assign points = images.points %}
+{% for point in points %}
+{{point}}
+<br>
+<br>
+{% endfor %}
 
 <p>Hello back</p>
 
@@ -16,6 +26,16 @@
             </div>
             <div class="back">
                 <img src="{{ pdfData.images[0].url }}" alt="Img 1">
+                {% assign points = pdfData.images[0].points %}
+
+                {% for point in points %}
+                <p
+                    class="absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
+                    <span class="bg-[{{point.color}}] px-4 py-2 rounded-sm shadow-lg ">
+                        {{point.product}}
+                    </span>
+                </p>
+                {% endfor %}
             </div>
         </div>
 
@@ -26,11 +46,22 @@
         {% assign nextIndex = index | plus: 1 %}
 
         <div class="page">
-            <div class="front">
+            <div class="front relative">
                 {% if index < array_length %} <img src="{{ pdfData.images[index].url }}" alt="Img {{ index }}">
+                    {% assign points = pdfData.images[index].points %}
+
+                    {% for point in points %}
+                    <p
+                        class="absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
+                        <span class="bg-[{{point.color}}] px-4 py-2 rounded-sm shadow-lg ">
+                            {{point.product}}
+                        </span>
+                    </p>
+                    {% endfor %}
+
                     {% else %}
-                    <img src="https://png.pngtree.com/png-vector/20220606/ourmid/pngtree-pdf-file-icon-png-png-image_4899509.png"
-                        alt="Pdf">
+
+                    <img src="https://i.pinimg.com/736x/bd/06/62/bd06625e8321081fd66ad0f333a35615.jpg" alt="Pdf">
                     {% endif %}
             </div>
 
@@ -44,6 +75,16 @@
 
             <div class="back">
                 <img src="{{ pdfData.images[nextIndex].url }}" alt="Img {{ index }}">
+                {% assign points = pdfData.images[nextIndex].points %}
+
+                {% for point in points %}
+                <p
+                    class="absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
+                    <span class="bg-[{{point.color}}] px-4 py-2 rounded-sm shadow-lg ">
+                        {{point.product}}
+                    </span>
+                </p>
+                {% endfor %}
             </div>
 
 

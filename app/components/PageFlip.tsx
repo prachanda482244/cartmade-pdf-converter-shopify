@@ -1,9 +1,9 @@
 import { useState, MouseEvent } from "react";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
-import { Form, useActionData, useFetcher } from "@remix-run/react";
+import { useFetcher } from "@remix-run/react";
 import { IMAGES, Marker } from "app/constants/types";
-import { Button, Page } from "@shopify/polaris";
+import { Button, Page, Pagination } from "@shopify/polaris";
 
 const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   const fetcher = useFetcher();
@@ -17,7 +17,6 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     "#33C7FF",
     "#6A33FF",
   ];
-  // console.log(images, "IMAGES");
 
   const [currentPage, setCurrentPage] = useState<number>(0);
   const [animate, setAnimate] = useState<boolean>(false);
@@ -30,6 +29,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   );
 
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
+
   const handleNextPage = () => {
     if (currentPage < images.length - 2) {
       setAnimate(true);
@@ -44,22 +44,25 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     }
   };
 
+  // Handle click to add marker on the image
   const handleImageMarker = async (
     event: MouseEvent<HTMLImageElement>,
     imageIndex: number,
     isRightImage: boolean,
   ) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
+    const container = document.getElementById("image-container")!;
+    const rect = container.getBoundingClientRect();
+    const x = event.clientX - rect.left; // relative X
+    const y = event.clientY - rect.top; // relative Y
 
-    const adjustedX = isRightImage ? x + rect.width : x;
+    const adjustedX = isRightImage ? x + rect.width : x; // Adjust for right image
 
     const selected: any = await shopify.resourcePicker({
       type: "product",
       multiple: 1,
       filter: { variants: false, archived: false, draft: false },
     });
+
     if (selected && selected.length > 0) {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
@@ -100,6 +103,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       } else if (data.x >= pageWidth && marker.imageIndex % 2 === 0) {
         marker.imageIndex = marker.imageIndex + 1;
       }
+
       marker.x = data.x;
       marker.y = data.y;
       setMarkers(newMarkers);
@@ -109,6 +113,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     }
   };
 
+  console.log(markers, "POINS");
   const handleSave = async () => {
     images.forEach((image) => {
       const imageMarkers = markers.filter(
@@ -126,147 +131,157 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   };
 
   return (
-    <Page
-      backAction={{ content: "Settings", url: "/app/pdf-convert" }}
-      primaryAction={{
-        content: "Save",
-        onAction: handleSave,
-        loading: fetcher.state === "submitting",
-      }}
-    >
-      <div className="flex flex-col min-h-screen bg-gray-100">
-        {/* <Form method="post" onSubmit={handleSave}>
-          <div className="flex items-center justify-end py-1">
-            <Button
-              loading={fetcher.state === "submitting"}
-              variant="primary"
-              submit={true}
+    <div className="w-[80%]">
+      <Page
+        backAction={{ content: "Settings", url: "/app/pdf-convert" }}
+        primaryAction={{
+          content: "Save",
+          onAction: handleSave,
+          loading: fetcher.state === "submitting",
+        }}
+        fullWidth
+      >
+        <div className="flex flex-col bg-gray-100">
+          <div
+            className="relative w-[70%] h-[80vh] object-cover mx-auto"
+            id="image-container"
+          >
+            <motion.div
+              className="absolute flex w-full  h-full bg-white rounded-lg shadow-lg"
+              initial={{ rotateY: 0, zIndex: 0 }}
+              animate={{
+                rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
+                zIndex: currentPage % 2 === 0 ? 0 : 1,
+              }}
+              transition={{ duration: 0.6 }}
+              style={{ transformOrigin: "right center" }}
+              onAnimationComplete={() => setAnimate(false)}
             >
-              Save
-            </Button>
-          </div>
-        </Form> */}
-        <div className="relative w-[900px] h-[550px] perspective-1000">
-          <motion.div
-            className="absolute flex w-full h-full bg-white rounded-lg shadow-lg"
-            initial={{ rotateY: 0, zIndex: 0 }}
-            animate={{
-              rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
-              zIndex: currentPage % 2 === 0 ? 0 : 1,
-            }}
-            transition={{ duration: 0.6 }}
-            style={{ transformOrigin: "right center" }}
-            onAnimationComplete={() => setAnimate(false)}
-          >
-            <img
-              src={images[currentPage].url}
-              alt={`Page ${currentPage + 1}`}
-              className="w-1/2 cursor-crosshair h-full object-cover rounded-tl-lg rounded-bl-lg"
-              onClick={(event) => handleImageMarker(event, currentPage, false)}
-            />
-            <img
-              src={
-                currentPage + 1 < images.length
-                  ? images[currentPage + 1].url
-                  : images[currentPage].url
-              }
-              alt={`Page ${currentPage + 2}`}
-              className="w-1/2 h-full cursor-crosshair object-cover rounded-tr-lg rounded-br-lg"
-              onClick={(event) =>
-                handleImageMarker(event, currentPage + 1, true)
-              }
-            />
-            {markers.map(
-              (marker, index) =>
-                (marker.imageIndex === currentPage ||
-                  marker.imageIndex === currentPage + 1) && (
-                  <Draggable
-                    key={index}
-                    defaultPosition={{ x: marker.x, y: marker.y }}
-                    onStop={(e: any, data) => handleDragStop(e, data, index)}
-                  >
-                    <div
-                      className="absolute flex justify-between items-center text-white text-sm px-3 p-1 rounded-full shadow-lg cursor-pointer"
-                      style={{ backgroundColor: marker.color }}
-                      onDoubleClick={() => handleMarkerClick(marker)}
+              <img
+                src={images[currentPage].url}
+                alt={`Page ${currentPage + 1}`}
+                className="w-full cursor-crosshair h-full object-cover bg-blue-500 pl-2 pt-2 pb-2 pr-[1px] rounded-tl-lg rounded-bl-lg"
+                onClick={(event) =>
+                  handleImageMarker(event, currentPage, false)
+                }
+              />
+
+              <img
+                src={
+                  currentPage + 1 < images.length
+                    ? images[currentPage + 1].url
+                    : images[currentPage].url
+                }
+                alt={`Page ${currentPage + 2}`}
+                className="w-full bg-blue-500 pr-2 pt-2 pb-2 pl-[1px] h-full cursor-crosshair object-cover rounded-tr-lg rounded-br-lg"
+                onClick={(event) =>
+                  handleImageMarker(event, currentPage + 1, true)
+                }
+              />
+
+              {markers.map(
+                (marker, index) =>
+                  (marker.imageIndex === currentPage ||
+                    marker.imageIndex === currentPage + 1) && (
+                    <Draggable
+                      key={index}
+                      defaultPosition={{ x: marker.x, y: marker.y }}
+                      onStop={(e: any, data) => handleDragStop(e, data, index)}
                     >
-                      <span className="mr-2">
-                        {marker.product.slice(0, 3)}..
-                      </span>
-                      <button
-                        className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMarkers((prevMarkers) =>
-                            prevMarkers.filter((m) => m !== marker),
-                          );
-                        }}
+                      <div
+                        className="absolute flex justify-between items-center text-white text-sm px-3 p-1 rounded-full shadow-lg cursor-pointer"
+                        style={{ backgroundColor: marker.color }}
+                        onDoubleClick={() => handleMarkerClick(marker)}
                       >
-                        <span className="text-xs font-bold text-white">×</span>
-                      </button>
-                    </div>
-                  </Draggable>
-                ),
-            )}
-          </motion.div>
-        </div>
+                        <span className="mr-2">
+                          {marker.product.slice(0, 3)}..
+                        </span>
+                        <button
+                          className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMarkers((prevMarkers) =>
+                              prevMarkers.filter((m) => m !== marker),
+                            );
+                          }}
+                        >
+                          <span className="text-xs font-bold text-white">
+                            ×
+                          </span>
+                        </button>
+                      </div>
+                    </Draggable>
+                  ),
+              )}
+            </motion.div>
+          </div>
+          <div className="flex items-center justify-center w-full mt-2">
+            <Pagination
+              label="Pagination"
+              hasPrevious={currentPage !== 0}
+              onPrevious={handlePrevPage}
+              hasNext={currentPage + 2 < images.length}
+              onNext={handleNextPage}
+            />
+          </div>
 
-        <div className="flex justify-between w-full mt-4">
-          <button
-            onClick={handlePrevPage}
-            disabled={currentPage === 0}
-            className={`px-4 py-2 text-white rounded ${
-              currentPage === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-700"
-            }`}
-          >
-            Prev
-          </button>
-          <button
-            onClick={handleNextPage}
-            disabled={currentPage >= images.length - 1}
-            className={`px-4 py-2 text-white rounded ${
-              currentPage >= images.length - 2
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 hover:bg-blue-700"
-            }`}
-          >
-            Next
-          </button>
-        </div>
+          {/* <div className="flex justify-between w-full mt-4">
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 0}
+              className={`px-4 py-2 text-white rounded ${
+                currentPage === 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-700"
+              }`}
+            >
+              Prev
+            </button>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage >= images.length - 1}
+              className={`px-4 py-2 text-white rounded ${
+                currentPage >= images.length - 2
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-500 hover:bg-blue-700"
+              }`}
+            >
+              Next
+            </button>
+          </div> */}
 
-        {selectedMarker && (
-          <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-            <div className="bg-white p-6 rounded-lg w-3/4 max-w-3xl shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">
-                  {selectedMarker.product}
-                </h2>
+          {selectedMarker && (
+            <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
+              <div className="bg-white p-6 rounded-lg w-3/4 max-w-3xl shadow-lg">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold">
+                    {selectedMarker.product}
+                  </h2>
+                  <button
+                    onClick={() => setSelectedMarker(null)}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    &times;
+                  </button>
+                </div>
+                <img
+                  src={selectedMarker.productImage}
+                  alt={selectedMarker.product}
+                  className="w-full h-48 object-contain mb-4"
+                />
+                <p>More details here...</p>
                 <button
-                  onClick={() => setSelectedMarker(null)}
-                  className="text-gray-600 hover:text-gray-800"
+                  onClick={handleRemoveMarker}
+                  className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
                 >
-                  &times;
+                  Remove Product
                 </button>
               </div>
-              <img
-                src={selectedMarker.productImage}
-                alt={selectedMarker.product}
-                className="w-full h-48 object-contain mb-4"
-              />
-              <p>More details here...</p>
-              <button
-                onClick={handleRemoveMarker}
-                className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-              >
-                Remove Product
-              </button>
             </div>
-          </div>
-        )}
-      </div>
-    </Page>
+          )}
+        </div>
+      </Page>
+    </div>
   );
 };
 
