@@ -29,12 +29,12 @@
                 {% assign points = pdfData.images[0].points %}
 
                 {% for point in points %}
-                <p
+                <div
                     class="absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
-                    <span class="bg-[{{point.color}}] px-4 py-2 rounded-sm shadow-lg ">
-                        {{point.product}}
-                    </span>
-                </p>
+                    <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
+                        <span class="h-4 w-4 rounded-full bg-white"></span>
+                    </p>
+                </div>
                 {% endfor %}
             </div>
         </div>
@@ -51,12 +51,12 @@
                     {% assign points = pdfData.images[index].points %}
 
                     {% for point in points %}
-                    <p
+                    <div
                         class="absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
-                        <span class="bg-[{{point.color}}] px-4 py-2 rounded-sm shadow-lg ">
-                            {{point.product}}
-                        </span>
-                    </p>
+                        <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
+                            <span class="h-4 w-4 rounded-full bg-white"></span>
+                        </p>
+                    </div>
                     {% endfor %}
 
                     {% else %}
@@ -78,12 +78,12 @@
                 {% assign points = pdfData.images[nextIndex].points %}
 
                 {% for point in points %}
-                <p
+                <div
                     class="absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
-                    <span class="bg-[{{point.color}}] px-4 py-2 rounded-sm shadow-lg ">
-                        {{point.product}}
-                    </span>
-                </p>
+                    <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
+                        <span class="h-4 w-4 rounded-full bg-white"></span>
+                    </p>
+                </div>
                 {% endfor %}
             </div>
 

@@ -50,8 +50,9 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     imageIndex: number,
     isRightImage: boolean,
   ) => {
-    const container = document.getElementById("image-container")!;
-    const rect = container.getBoundingClientRect();
+    // const container = document.getElementById("image-container")!;
+    const rect = event.currentTarget.getBoundingClientRect();
+
     const x = event.clientX - rect.left; // relative X
     const y = event.clientY - rect.top; // relative Y
 
