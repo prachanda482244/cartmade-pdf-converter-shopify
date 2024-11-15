@@ -337,16 +337,13 @@ const PDFConverter = () => {
   //   }, 700);
   // };
 
-  const handlePdfDelete = (id: string, target: any) => {
-    const confirmation = confirm("Are you sure you want to delete ? ");
+  const handlePdfDelete = (id: string) => {
     const metaFieldId = `gid://shopify/Metafield/${id}`;
     const formData = new FormData();
     formData.append("metafieldId", metaFieldId);
-    if (confirmation) {
-      fetcher.submit(formData, { method: "delete" });
-      setFileUploadTracker(false);
-      setDeleteId(id);
-    }
+    fetcher.submit(formData, { method: "delete" });
+    setFileUploadTracker(false);
+    setDeleteId(id);
   };
   const navigate = useNavigate();
 
@@ -368,40 +365,44 @@ const PDFConverter = () => {
 
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(pdfData);
-  const rowMarkup = pdfData.map(({ id, pdfName, frontPage, key }, index) => (
-    <IndexTable.Row
-      id={id}
-      key={id}
-      selected={selectedResources.includes(id)}
-      position={index}
-    >
-      <IndexTable.Cell>
-        <Text variant="bodyMd" fontWeight="bold" as="span">
-          <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
-            <Thumbnail alt={pdfName} source={frontPage} size="small" />
-            <span
-              onClick={() => navigate(`/app/details/${id}`)}
-              className="hover:underline"
-            >
-              {pdfName}
+  console.log(selectedResources, "SELECTED REou");
+  const rowMarkup =
+    pdfData?.length &&
+    pdfData?.map(({ id, pdfName, frontPage, key }, index) => (
+      <IndexTable.Row
+        id={id}
+        key={id}
+        selected={selectedResources.includes(deleteId)} //id
+        onClick={() => setDeleteId(id)}
+        position={index}
+      >
+        <IndexTable.Cell>
+          <Text variant="bodyMd" fontWeight="bold" as="span">
+            <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
+              <Thumbnail alt={pdfName} source={frontPage} size="small" />
+              <span
+                onClick={() => navigate(`/app/details/${id}`)}
+                className="hover:underline"
+              >
+                {pdfName}
+              </span>
+            </div>
+          </Text>
+        </IndexTable.Cell>
+        <IndexTable.Cell>Jul 20 at 3:46pm</IndexTable.Cell>
+        <IndexTable.Cell>600.65 KB</IndexTable.Cell>
+        <IndexTable.Cell>
+          <p
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => handleCopyKey(key)}
+          >
+            <span className="p-1 relative px-2 shadow-md text-xs text-blue-500 rounded-md cursor-pointer hover:bg-blue-100 capitalize transition-colors">
+              {copiedKey === key ? "copied" : "copy key "}
             </span>
-          </div>
-        </Text>
-      </IndexTable.Cell>
-      <IndexTable.Cell>Jul 20 at 3:46pm</IndexTable.Cell>
-      <IndexTable.Cell>600.65 KB</IndexTable.Cell>
-      <IndexTable.Cell>
-        <p
-          className="flex items-center gap-2 cursor-pointer"
-          onClick={() => handleCopyKey(key)}
-        >
-          <span className="p-1 relative px-2 shadow-md text-xs text-blue-500 rounded-md cursor-pointer hover:bg-blue-100 capitalize transition-colors">
-            {copiedKey === key ? "copied" : "copy key "}
-          </span>
-        </p>
-      </IndexTable.Cell>
-    </IndexTable.Row>
-  ));
+          </p>
+        </IndexTable.Cell>
+      </IndexTable.Row>
+    ));
   const handleModalToggle = () => {
     shopify.modal.toggle("deleteModal");
   };
@@ -418,6 +419,7 @@ const PDFConverter = () => {
     plural: "orders",
   };
 
+  console.log(deleteId, "DELETE ID");
   return (
     <Page
       backAction={{ content: "Settings", url: "/app" }}
@@ -450,12 +452,19 @@ const PDFConverter = () => {
           <button onClick={() => shopify.modal.hide("deleteModal")}>
             Cancel
           </button>
-          <button variant="primary" tone="critical">
+          <button
+            variant="primary"
+            onClick={() => {
+              handlePdfDelete(deleteId);
+              shopify.modal.hide("deleteModal");
+            }}
+            tone="critical"
+          >
             Delete
           </button>
         </TitleBar>
       </Modal>
-      {loader.error && fetcher.state !== "submitting" ? (
+      {loader.error && fetcher.state !== "submitting" && !pdfData ? (
         <LegacyCard sectioned>
           <EmptyState
             heading="Manage your Pdfs"
@@ -478,9 +487,9 @@ const PDFConverter = () => {
           <LegacyCard>
             <IndexTable
               resourceName={resourceName}
-              itemCount={pdfData.length}
+              itemCount={pdfData?.length}
               selectedItemsCount={
-                allResourcesSelected ? "All" : selectedResources.length
+                allResourcesSelected ? "All" : selectedResources?.length
               }
               promotedBulkActions={promotedBulkActions}
               onSelectionChange={handleSelectionChange}
