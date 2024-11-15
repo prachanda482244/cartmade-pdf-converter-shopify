@@ -38,6 +38,7 @@ import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import fs from "fs";
 import { PDFVALUES } from "app/constants/types";
+import { Modal, TitleBar } from "@shopify/app-bridge-react";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -318,6 +319,7 @@ const PDFConverter = () => {
   const handleCopyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
       setCopiedKey(key);
+      shopify.toast.show("Copied to clipboard");
       setTimeout(() => {
         setCopiedKey(null);
       }, 2000);
@@ -366,27 +368,40 @@ const PDFConverter = () => {
 
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(pdfData);
-  const rowMarkup = pdfData.map(
-    ({ id, pdfName, frontPage, allImages }, index) => (
-      <IndexTable.Row
-        id={id}
-        key={id}
-        selected={selectedResources.includes(id)}
-        position={index}
-      >
-        <IndexTable.Cell>
-          <Text variant="bodyMd" fontWeight="bold" as="span">
-            <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
-              <Thumbnail alt={pdfName} source={frontPage} size="small" />
+  const rowMarkup = pdfData.map(({ id, pdfName, frontPage, key }, index) => (
+    <IndexTable.Row
+      id={id}
+      key={id}
+      selected={selectedResources.includes(id)}
+      position={index}
+    >
+      <IndexTable.Cell>
+        <Text variant="bodyMd" fontWeight="bold" as="span">
+          <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
+            <Thumbnail alt={pdfName} source={frontPage} size="small" />
+            <span
+              onClick={() => navigate(`/app/details/${id}`)}
+              className="hover:underline"
+            >
               {pdfName}
-            </div>
-          </Text>
-        </IndexTable.Cell>
-        <IndexTable.Cell>Jul 20 at 3:46pm</IndexTable.Cell>
-        <IndexTable.Cell>600.65 KB</IndexTable.Cell>
-      </IndexTable.Row>
-    ),
-  );
+            </span>
+          </div>
+        </Text>
+      </IndexTable.Cell>
+      <IndexTable.Cell>Jul 20 at 3:46pm</IndexTable.Cell>
+      <IndexTable.Cell>600.65 KB</IndexTable.Cell>
+      <IndexTable.Cell>
+        <p
+          className="flex items-center gap-2 cursor-pointer"
+          onClick={() => handleCopyKey(key)}
+        >
+          <span className="p-1 relative px-2 shadow-md text-xs text-blue-500 rounded-md cursor-pointer hover:bg-blue-100 capitalize transition-colors">
+            {copiedKey === key ? "copied" : "copy key "}
+          </span>
+        </p>
+      </IndexTable.Cell>
+    </IndexTable.Row>
+  ));
   const handleModalToggle = () => {
     shopify.modal.toggle("deleteModal");
   };
@@ -424,16 +439,22 @@ const PDFConverter = () => {
         name="pdf"
         id="pdfupload"
       />
-
       {/* Main section  */}
-      <ui-modal id="deleteModal">
-        <p>Message</p>
-        <ui-title-bar title="Title">
-          <button variant="primary">Label</button>
-          <button>Label</button>
-        </ui-title-bar>
-      </ui-modal>
-
+      <Modal id="deleteModal">
+        <Box padding="300">
+          <Text as="p">
+            Are you sure you want to delete ? This cannot be undone.
+          </Text>
+        </Box>
+        <TitleBar title="Delete">
+          <button onClick={() => shopify.modal.hide("deleteModal")}>
+            Cancel
+          </button>
+          <button variant="primary" tone="critical">
+            Delete
+          </button>
+        </TitleBar>
+      </Modal>
       {loader.error && fetcher.state !== "submitting" ? (
         <LegacyCard sectioned>
           <EmptyState
@@ -467,6 +488,7 @@ const PDFConverter = () => {
                 { title: "File Name" },
                 { title: "Date" },
                 { title: "Size" },
+                { title: "PDF key" },
               ]}
               pagination={{
                 hasNext: true,

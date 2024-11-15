@@ -1,9 +1,15 @@
-import { useState, MouseEvent } from "react";
+import { useState, MouseEvent, useCallback } from "react";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
 import { useFetcher } from "@remix-run/react";
 import { IMAGES, Marker } from "app/constants/types";
-import { Button, Page, Pagination } from "@shopify/polaris";
+import {
+  Button,
+  LegacyCard,
+  Page,
+  Pagination,
+  RangeSlider,
+} from "@shopify/polaris";
 
 const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   const fetcher = useFetcher();
@@ -43,6 +49,12 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       setCurrentPage((prevPage) => prevPage - 2);
     }
   };
+
+  const [settings, setSettings] = useState({
+    heading: "",
+    description: "",
+  });
+  const [isShowModal, setIsSetModal] = useState<boolean>(false);
 
   // Handle click to add marker on the image
 
@@ -115,7 +127,6 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     }
   };
 
-  console.log(markers, "POINS");
   const handleSave = async () => {
     images.forEach((image) => {
       const imageMarkers = markers.filter(
@@ -128,10 +139,35 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     formData.append("images", JSON.stringify(images));
     formData.append("metaFieldId", metaFieldId);
     formData.append("pdfName", pdfName);
-
     fetcher.submit(formData, { method: "post" });
   };
 
+  if (fetcher.state === "loading") {
+    shopify.toast.show("Product saved");
+  }
+  const [rangeValue, setRangeValue] = useState(100);
+  const [verticalRange, setVerticalRange] = useState(50);
+  const [mobileRangeValue, setMobileRange] = useState(70);
+  const [mobileVerticalRange, setMobileVerticalRange] = useState(20);
+  const handleRangeSliderChange = useCallback(
+    (value: number) => setRangeValue(value),
+    [],
+  );
+  const handleVerticalRangeSliderChange = useCallback(
+    (value: number) => setVerticalRange(value),
+    [],
+  );
+
+  const handleMobileRangeSliderChange = useCallback(
+    (value: number) => setMobileRange(value),
+    [],
+  );
+  const handleMobileRangeVerticalSliderChange = useCallback(
+    (value: number) => setMobileVerticalRange(value),
+    [],
+  );
+
+  console.log(selectedMarker);
   return (
     <div className="w-[80%]">
       <Page
@@ -141,64 +177,74 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           onAction: handleSave,
           loading: fetcher.state === "submitting",
         }}
+        secondaryActions={
+          <Button onClick={() => alert("settings")}>Settings</Button>
+        }
         fullWidth
       >
-        <div className="flex flex-col bg-gray-100">
-          <div
-            className="relative w-[70%] h-[80vh] object-cover mx-auto"
-            id="image-container"
-          >
-            <motion.div
-              className="absolute flex w-full  h-full bg-white rounded-lg shadow-lg"
-              initial={{ rotateY: 0, zIndex: 0 }}
-              animate={{
-                rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
-                zIndex: currentPage % 2 === 0 ? 0 : 1,
-              }}
-              transition={{ duration: 0.6 }}
-              style={{ transformOrigin: "right center" }}
-              onAnimationComplete={() => setAnimate(false)}
+        <div className="flex gap-2">
+          <div className="flex w-full h-full  flex-col bg-gray-100">
+            <div
+              className="relative h-[80vh]  w-full object-cover mx-auto"
+              id="image-container"
             >
-              <img
-                src={images[currentPage].url}
-                alt={`Page ${currentPage + 1}`}
-                className="w-full cursor-crosshair h-full object-cover bg-blue-500 pl-2 pt-2 pb-2 pr-[1px] rounded-tl-lg rounded-bl-lg"
-                onClick={(event) =>
-                  handleImageMarker(event, currentPage, false)
-                }
-              />
+              <motion.div
+                className=" flex w-full  h-full bg-white rounded-lg shadow-lg"
+                initial={{ rotateY: 0, zIndex: 0 }}
+                animate={{
+                  rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
+                  zIndex: currentPage % 2 === 0 ? 0 : 1,
+                }}
+                transition={{ duration: 0.6 }}
+                style={{ transformOrigin: "right center" }}
+                onAnimationComplete={() => setAnimate(false)}
+              >
+                <img
+                  src={images[currentPage].url}
+                  alt={`Page ${currentPage + 1}`}
+                  className="w-full cursor-crosshair h-full object-cover rounded-tl-lg rounded-bl-lg"
+                  onClick={(event) =>
+                    handleImageMarker(event, currentPage, false)
+                  }
+                />
 
-              <img
-                src={
-                  currentPage + 1 < images.length
-                    ? images[currentPage + 1].url
-                    : images[currentPage].url
-                }
-                alt={`Page ${currentPage + 2}`}
-                className="w-full bg-blue-500 pr-2 pt-2 pb-2 pl-[1px] h-full cursor-crosshair object-cover rounded-tr-lg rounded-br-lg"
-                onClick={(event) =>
-                  handleImageMarker(event, currentPage + 1, true)
-                }
-              />
+                <img
+                  src={
+                    currentPage + 1 < images.length
+                      ? images[currentPage + 1].url
+                      : images[currentPage].url
+                  }
+                  alt={`Page ${currentPage + 2}`}
+                  className="w-full h-full cursor-crosshair object-cover rounded-tr-lg rounded-br-lg"
+                  onClick={(event) =>
+                    handleImageMarker(event, currentPage + 1, true)
+                  }
+                />
 
-              {markers.map(
-                (marker, index) =>
-                  (marker.imageIndex === currentPage ||
-                    marker.imageIndex === currentPage + 1) && (
-                    <Draggable
-                      key={index}
-                      defaultPosition={{ x: marker.x, y: marker.y }}
-                      onStop={(e: any, data) => handleDragStop(e, data, index)}
-                    >
-                      <div
-                        className="absolute flex justify-between items-center text-white text-sm px-3 p-1 rounded-full shadow-lg cursor-pointer"
-                        style={{ backgroundColor: marker.color }}
-                        onDoubleClick={() => handleMarkerClick(marker)}
+                {markers.map(
+                  (marker, index) =>
+                    (marker.imageIndex === currentPage ||
+                      marker.imageIndex === currentPage + 1) && (
+                      <Draggable
+                        key={index}
+                        defaultPosition={{ x: marker.x, y: marker.y }}
+                        onStop={(e: any, data) =>
+                          handleDragStop(e, data, index)
+                        }
                       >
-                        <span className="mr-2">
-                          {marker.product.slice(0, 3)}..
-                        </span>
-                        <button
+                        <div
+                          className="absolute flex justify-center items-center text-white text-sm h-6 w-6 rounded-full shadow-lg cursor-pointer animate-pulse"
+                          style={{ backgroundColor: marker.color }}
+                          onClick={() =>
+                            setSettings({
+                              ...settings,
+                              heading: marker.product,
+                            })
+                          }
+                          onDoubleClick={() => handleMarkerClick(marker)}
+                        >
+                          <span className="w-4 h-4 rounded-full bg-white"></span>
+                          {/* <button
                           className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
                           onClick={(e) => {
                             e.stopPropagation();
@@ -210,77 +256,200 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                           <span className="text-xs font-bold text-white">
                             ×
                           </span>
-                        </button>
-                      </div>
-                    </Draggable>
-                  ),
-              )}
-            </motion.div>
-          </div>
-          <div className="flex items-center justify-center w-full mt-2">
-            <Pagination
-              label="Pagination"
-              hasPrevious={currentPage !== 0}
-              onPrevious={handlePrevPage}
-              hasNext={currentPage + 2 < images.length}
-              onNext={handleNextPage}
-            />
+                        </button> */}
+                        </div>
+                      </Draggable>
+                    ),
+                )}
+              </motion.div>
+            </div>
+            <div className="flex items-center justify-center w-full mt-2">
+              <Pagination
+                label="Pagination"
+                hasPrevious={currentPage !== 0}
+                onPrevious={handlePrevPage}
+                hasNext={currentPage + 2 < images.length}
+                onNext={handleNextPage}
+              />
+            </div>
+            {(selectedMarker || isShowModal) && selectedMarker !== null && (
+              <div className={`${!isShowModal ? "hidden" : "block"}`}>
+                <Draggable>
+                  <div className="bg-white absolute top-20 left-20 z-20  border-black border p-6 rounded-lg ml-20 w-3/4 max-w-3xl shadow-lg">
+                    <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-lg font-semibold">
+                        {settings.heading === ""
+                          ? "Untitled Product"
+                          : settings.heading}
+                      </h2>
+                      <button
+                        onClick={() => setIsSetModal(false)}
+                        className="text-gray-600  hover:text-gray-800"
+                      >
+                        &times;
+                      </button>
+                    </div>
+                    <img
+                      src={selectedMarker.productImage}
+                      alt={selectedMarker.product}
+                      className="w-full h-48 object-contain mb-4"
+                    />
+                    <p>More details here...</p>
+                    <button
+                      onClick={handleRemoveMarker}
+                      className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                    >
+                      Remove Product
+                    </button>
+                  </div>
+                </Draggable>
+              </div>
+            )}
           </div>
 
-          {/* <div className="flex justify-between w-full mt-4">
-            <button
-              onClick={handlePrevPage}
-              disabled={currentPage === 0}
-              className={`px-4 py-2 text-white rounded ${
-                currentPage === 0
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-700"
-              }`}
-            >
-              Prev
-            </button>
-            <button
-              onClick={handleNextPage}
-              disabled={currentPage >= images.length - 1}
-              className={`px-4 py-2 text-white rounded ${
-                currentPage >= images.length - 2
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-blue-500 hover:bg-blue-700"
-              }`}
-            >
-              Next
-            </button>
-          </div> */}
-
-          {selectedMarker && (
-            <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-50 z-50">
-              <div className="bg-white p-6 rounded-lg w-3/4 max-w-3xl shadow-lg">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-lg font-semibold">
-                    {selectedMarker.product}
-                  </h2>
-                  <button
-                    onClick={() => setSelectedMarker(null)}
-                    className="text-gray-600 hover:text-gray-800"
-                  >
-                    &times;
-                  </button>
-                </div>
-                <img
-                  src={selectedMarker.productImage}
-                  alt={selectedMarker.product}
-                  className="w-full h-48 object-contain mb-4"
-                />
-                <p>More details here...</p>
-                <button
-                  onClick={handleRemoveMarker}
-                  className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+          <div
+            className={`w-[25%] ${settings?.heading === "" ? "opacity-50 pointer-events-none" : "opacity-100"} h-[680px] overflow-y-scroll  rounded-lg  p-4 bg-white`}
+          >
+            <div className="border-b flex items-center justify-between pb-2 mb-4">
+              <p className="font-bold text-xl text-gray-800">Settings</p>
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => setSettings({ ...settings, heading: "" })}
+                  variant="secondary"
+                  tone="critical"
                 >
-                  Remove Product
-                </button>
+                  Cancel
+                </Button>
+                {settings.heading !== "" && (
+                  <Button variant="primary">Save</Button>
+                )}
               </div>
             </div>
-          )}
+
+            <div className="mb-6">
+              <label
+                htmlFor="heading"
+                className="block text-sm font-medium text-gray-700"
+              >
+                Edit Heading
+              </label>
+              <input
+                type="text"
+                id="heading"
+                onClick={() => {
+                  setIsSetModal(true);
+                }}
+                value={settings.heading}
+                onChange={(e) =>
+                  setSettings({ ...settings, heading: e.target.value })
+                }
+                placeholder="Enter product heading"
+                className="mt-1 block w-full py-2 px-4 rounded-md border-gray-300 shadow-sm focus:outline-indigo-500   sm:text-sm"
+              />
+            </div>
+
+            <div className="mb-6">
+              <Button variant="primary">Select Product</Button>
+            </div>
+            <div className="pb-2">
+              <p>Description</p>
+              <textarea
+                value={settings.description}
+                onChange={(e) =>
+                  setSettings({ ...settings, description: e.target.value })
+                }
+                rows={2}
+                placeholder="Enter product description"
+                className="mt-1 block w-full py-2 px-4 rounded-md border border-gray-400 shadow-sm focus:outline-blue-500   sm:text-sm"
+              ></textarea>
+            </div>
+            <div className="flex flex-col gap-4">
+              <p className="font-semibold">Position</p>
+
+              <div className="flex flex-col gap-2">
+                <p>Horizontal</p>
+                <RangeSlider
+                  output
+                  label=""
+                  min={0}
+                  max={100}
+                  value={mobileRangeValue}
+                  onChange={handleMobileRangeSliderChange}
+                  suffix={
+                    <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
+                      {mobileRangeValue}
+                      <span>%</span>
+                    </p>
+                  }
+                />
+                <p className="font-light">
+                  Horizontal position of the hot spot
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <p>Vertical</p>
+                <RangeSlider
+                  output
+                  label=""
+                  min={0}
+                  max={100}
+                  value={mobileVerticalRange}
+                  onChange={handleMobileRangeVerticalSliderChange}
+                  suffix={
+                    <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
+                      {mobileVerticalRange}
+                      <span>%</span>
+                    </p>
+                  }
+                />
+                <p className="font-light">Vertical position of the hot spot</p>
+              </div>
+            </div>
+            <div className="flex flex-col gap-4">
+              <p className="font-semibold">Mobile Position</p>
+
+              <div className="flex flex-col gap-2">
+                <p>Horizontal</p>
+                <RangeSlider
+                  output
+                  label=""
+                  min={0}
+                  max={100}
+                  value={rangeValue}
+                  onChange={handleRangeSliderChange}
+                  suffix={
+                    <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
+                      {rangeValue}
+                      <span>%</span>
+                    </p>
+                  }
+                />
+                <p className="font-light">
+                  Horizontal position of the hot spot
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                <p>Vertical</p>
+                <RangeSlider
+                  output
+                  label=""
+                  min={0}
+                  max={100}
+                  value={verticalRange}
+                  onChange={handleVerticalRangeSliderChange}
+                  suffix={
+                    <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
+                      {verticalRange}
+                      <span>%</span>
+                    </p>
+                  }
+                />
+                <p className="font-light">Vertical position of the hot spot</p>
+              </div>
+            </div>
+          </div>
         </div>
       </Page>
     </div>
