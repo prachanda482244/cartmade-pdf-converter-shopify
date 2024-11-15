@@ -6,9 +6,19 @@ import {
   Button,
   Icon,
   Spinner,
+  LegacyCard,
+  EmptyState,
+  InlineStack,
+  ButtonGroup,
+  Popover,
+  ActionList,
+  IndexTable,
+  useIndexResourceState,
+  Thumbnail,
+  Box,
 } from "@shopify/polaris";
-import { DeleteIcon } from "@shopify/polaris-icons";
-import { useState, useCallback, useEffect } from "react";
+import { ChevronDownIcon, DeleteIcon } from "@shopify/polaris-icons";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   json,
   unstable_parseMultipartFormData,
@@ -295,35 +305,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const PDFConverter = () => {
-  const loader = useLoaderData();
-  console.log(loader, "LOADER");
+  const loader: any = useLoaderData();
   const { pdfData } = useLoaderData<PDFVALUES>();
-  console.log(pdfData, "PDF DATA");
   const fetcher = useFetcher();
+  console.log(loader, "LOADER");
+  console.log(pdfData, "PDF DATA");
   const [deleteId, setDeleteId] = useState<any>();
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
-  const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-
-  // const [openPdf, setOpenPdf] = useState<boolean>(false);
-  const handleDropZoneDrop = useCallback(
-    (_dropFiles: File[], acceptedFiles: File[], _rejectedFiles: File[]) => {
-      setFiles((files) => [...files, ...acceptedFiles]);
-
-      const formData = new FormData();
-      acceptedFiles.forEach((file) => formData.append("pdf", file));
-
-      fetcher.submit(formData, {
-        method: "post",
-        encType: "multipart/form-data",
-      });
-      // simulateProgress();
-
-      setFileUploadTracker(true);
-    },
-    [],
-  );
 
   const handleCopyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
@@ -333,6 +323,7 @@ const PDFConverter = () => {
       }, 2000);
     });
   };
+
   // const simulateProgress = () => {
   //   let progress = 0;
   //   const interval = setInterval(() => {
@@ -344,24 +335,6 @@ const PDFConverter = () => {
   //   }, 700);
   // };
 
-  const fileUpload = !files.length && (
-    <DropZone.FileUpload actionHint="Accepts PDF only" />
-  );
-
-  const uploadedFiles = files.length > 0 && (
-    <LegacyStack vertical>
-      {files.map((file, index) => (
-        <div className="p-4 text-center flex items-center justify-center">
-          <LegacyStack alignment="center" key={index}>
-            <Text variant="bodySm" alignment="center" as="p">
-              uploading {file.name}
-              {/* {uploadProgress}% */}
-            </Text>
-          </LegacyStack>
-        </div>
-      ))}
-    </LegacyStack>
-  );
   const handlePdfDelete = (id: string, target: any) => {
     const confirmation = confirm("Are you sure you want to delete ? ");
     const metaFieldId = `gid://shopify/Metafield/${id}`;
@@ -372,104 +345,139 @@ const PDFConverter = () => {
       setFileUploadTracker(false);
       setDeleteId(id);
     }
-    setFiles([]);
   };
   const navigate = useNavigate();
 
+  console.log(fetcher, "Fetcher");
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = () => {
+    const file = fileInputRef.current?.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append("pdf", file);
+      fetcher.submit(formData, {
+        method: "post",
+        encType: "multipart/form-data",
+      });
+    }
+  };
+
+  const { selectedResources, allResourcesSelected, handleSelectionChange } =
+    useIndexResourceState(pdfData);
+  const rowMarkup = pdfData.map(
+    ({ id, pdfName, frontPage, allImages }, index) => (
+      <IndexTable.Row
+        id={id}
+        key={id}
+        selected={selectedResources.includes(id)}
+        position={index}
+      >
+        <IndexTable.Cell>
+          <Text variant="bodyMd" fontWeight="bold" as="span">
+            <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
+              <Thumbnail alt={pdfName} source={frontPage} size="small" />
+              {pdfName}
+            </div>
+          </Text>
+        </IndexTable.Cell>
+        <IndexTable.Cell>Jul 20 at 3:46pm</IndexTable.Cell>
+        <IndexTable.Cell>600.65 KB</IndexTable.Cell>
+      </IndexTable.Row>
+    ),
+  );
+  const handleModalToggle = () => {
+    shopify.modal.toggle("deleteModal");
+  };
+  const promotedBulkActions = [
+    {
+      destructive: true,
+      content: "Delete PDF",
+      onAction: handleModalToggle,
+    },
+  ];
+
+  const resourceName = {
+    singular: "order",
+    plural: "orders",
+  };
+
   return (
-    <Page backAction={{ content: "Settings", url: "/app" }} title="PDFs">
-      <Form method="post">
-        <div className="flex w-full items-center mt-2 justify-center ">
-          <div className="w-full flex flex-col gap-3">
-            <DropZone
-              onDrop={handleDropZoneDrop}
-              accept="application/pdf"
-              allowMultiple={false}
-              variableHeight
-              type="file"
-            >
-              {uploadedFiles}
-              {fileUpload}
-            </DropZone>
-          </div>
-        </div>
-      </Form>
+    <Page
+      backAction={{ content: "Settings", url: "/app" }}
+      primaryAction={{
+        loading: fetcher.state === "submitting",
+        content: "Upload PDF",
+        onAction: () => {
+          fileInputRef.current?.click();
+        },
+      }}
+      title="PDFs"
+    >
+      <input
+        type="file"
+        ref={fileInputRef}
+        accept="application/pdf"
+        className="hidden"
+        onChange={handleFileChange}
+        name="pdf"
+        id="pdfupload"
+      />
 
       {/* Main section  */}
-      <Form>
-        <div className="grid gap-3 mt-5 items-start md:grid-cols-4 sm:grid-col-2 grid-cols-1">
-          {pdfData?.map(({ pdfName, frontPage, id, key }) => (
-            <div className="border bg-white rounded-lg cursor-pointer shadow-md overflow-hidden">
-              <div
-                onClick={() => navigate(`/app/details/${id}`)}
-                className="h-36  overflow-hidden relative"
-              >
-                {id === deleteId ? (
-                  <div className="absolute h-full w-full bg-white flex items-center justify-center">
-                    <p className="flex flex-col gap-2">
-                      <Spinner size="large" />
-                    </p>
-                  </div>
-                ) : null}
+      <ui-modal id="deleteModal">
+        <p>Message</p>
+        <ui-title-bar title="Title">
+          <button variant="primary">Label</button>
+          <button>Label</button>
+        </ui-title-bar>
+      </ui-modal>
 
-                <img
-                  alt=""
-                  width="100%"
-                  height="100%"
-                  style={{
-                    objectFit: "cover",
-                    objectPosition: "center",
-                  }}
-                  src={frontPage}
-                />
-                <button
-                  type="submit"
-                  className="absolute  right-2 top-1"
-                  onClick={(e) => handlePdfDelete(id, e.currentTarget)}
-                >
-                  <Icon source={DeleteIcon} tone="textCritical" />
-                </button>
-              </div>
-              <div className="px-3 py-4 flex items-center justify-center">
-                <p className="flex flex-col w-full items-center gap-2">
-                  <span>
-                    {id === deleteId
-                      ? "Removing pdf"
-                      : pdfName?.slice(0, 10) + ".pdf"}
-                  </span>
-                  <p
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => handleCopyKey(key)}
-                  >
-                    <span className="p-1 relative px-2 shadow-md text-xs text-blue-500 rounded-md cursor-pointer hover:bg-blue-100 capitalize transition-colors">
-                      {copiedKey === key
-                        ? "copied to clipboard"
-                        : "Copy PDF key "}
-                    </span>
-                  </p>
-                </p>
-                {/* <Button
-                  variant="secondary"
-                  onClick={() => navigate(`/app/details/${id}`)}
-                  size="micro"
-                >
-                  view details
-                </Button> */}
-              </div>
-            </div>
-          ))}
-          {fetcher.state === "submitting" && fileUploadTracker ? (
-            <div className="flex border bg-white rounded-lg shadow-md   items-center h-[230px] px-3 py-4 w-full justify-center">
-              <p className="flex flex-col gap-2 items-center">
-                <span className="font-semibold animate-pulse w-full p-1 ">
-                  Uploading pdf
-                </span>
-                <Spinner size="large" />
-              </p>
-            </div>
-          ) : null}
-        </div>
-      </Form>
+      {loader.error && fetcher.state !== "submitting" ? (
+        <LegacyCard sectioned>
+          <EmptyState
+            heading="Manage your Pdfs"
+            action={{
+              content: "Upload PDF",
+              onAction: () => {
+                fileInputRef.current?.click();
+              },
+            }}
+            image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+          >
+            <p>
+              Manage and organize your PDF documents with ease, ensuring quick
+              access and efficient storage.
+            </p>
+          </EmptyState>
+        </LegacyCard>
+      ) : (
+        <Box paddingBlockEnd="400">
+          <LegacyCard>
+            <IndexTable
+              resourceName={resourceName}
+              itemCount={pdfData.length}
+              selectedItemsCount={
+                allResourcesSelected ? "All" : selectedResources.length
+              }
+              promotedBulkActions={promotedBulkActions}
+              onSelectionChange={handleSelectionChange}
+              headings={[
+                { title: "File Name" },
+                { title: "Date" },
+                { title: "Size" },
+              ]}
+              pagination={{
+                hasNext: true,
+                onNext: () => {},
+              }}
+            >
+              {rowMarkup}
+            </IndexTable>
+          </LegacyCard>
+        </Box>
+      )}
     </Page>
   );
 };

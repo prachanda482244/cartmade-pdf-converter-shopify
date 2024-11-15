@@ -45,6 +45,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   };
 
   // Handle click to add marker on the image
+
   const handleImageMarker = async (
     event: MouseEvent<HTMLImageElement>,
     imageIndex: number,
