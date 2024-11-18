@@ -1,5 +1,11 @@
+import { Page } from "@shopify/polaris";
+
 const AppSettings = () => {
-  return <div>App settings</div>;
+  return (
+    <Page fullWidth title="">
+      App settings
+    </Page>
+  );
 };
 
 export default AppSettings;

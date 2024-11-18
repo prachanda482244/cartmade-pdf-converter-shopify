@@ -53,6 +53,10 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   const [settings, setSettings] = useState({
     heading: "",
     description: "",
+    horizonalValue: 10,
+    verticalValue: 10,
+    mobileHorizontalRange: 0,
+    mobileVerticalRange: 0,
   });
   const [isShowModal, setIsSetModal] = useState<boolean>(false);
 
@@ -61,15 +65,11 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   const handleImageMarker = async (
     event: MouseEvent<HTMLImageElement>,
     imageIndex: number,
-    isRightImage: boolean,
   ) => {
-    // const container = document.getElementById("image-container")!;
-    const rect = event.currentTarget.getBoundingClientRect();
-
-    const x = event.clientX - rect.left; // relative X
-    const y = event.clientY - rect.top; // relative Y
-
-    const adjustedX = isRightImage ? x + rect.width : x; // Adjust for right image
+    const container = document.getElementById("image-container")!;
+    const rect = container.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
 
     const selected: any = await shopify.resourcePicker({
       type: "product",
@@ -81,7 +81,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
         {
-          x: adjustedX,
+          x,
           y,
           imageIndex,
           product: selected[0].title,
@@ -95,6 +95,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
 
   const handleMarkerClick = (marker: Marker) => {
     setSelectedMarker(marker);
+    setIsSetModal(true);
   };
 
   const handleRemoveMarker = () => {
@@ -145,29 +146,41 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   if (fetcher.state === "loading") {
     shopify.toast.show("Product saved");
   }
-  const [rangeValue, setRangeValue] = useState(100);
-  const [verticalRange, setVerticalRange] = useState(50);
-  const [mobileRangeValue, setMobileRange] = useState(70);
-  const [mobileVerticalRange, setMobileVerticalRange] = useState(20);
+
   const handleRangeSliderChange = useCallback(
-    (value: number) => setRangeValue(value),
+    (value: number) =>
+      setSettings({
+        ...settings,
+        horizonalValue: value,
+      }),
     [],
   );
   const handleVerticalRangeSliderChange = useCallback(
-    (value: number) => setVerticalRange(value),
+    (value: number) =>
+      setSettings({
+        ...settings,
+        verticalValue: value,
+      }),
     [],
   );
 
   const handleMobileRangeSliderChange = useCallback(
-    (value: number) => setMobileRange(value),
+    (value: number) =>
+      setSettings({
+        ...settings,
+        mobileHorizontalRange: value,
+      }),
     [],
   );
   const handleMobileRangeVerticalSliderChange = useCallback(
-    (value: number) => setMobileVerticalRange(value),
+    (value: number) =>
+      setSettings({
+        ...settings,
+        mobileVerticalRange: value,
+      }),
     [],
   );
 
-  console.log(selectedMarker);
   return (
     <div className="w-[80%]">
       <Page
@@ -185,7 +198,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
         <div className="flex gap-2">
           <div className="flex w-full h-full  flex-col bg-gray-100">
             <div
-              className="relative h-[80vh]  w-full object-cover mx-auto"
+              className="relative h-[80vh] w-full object-cover mx-auto"
               id="image-container"
             >
               <motion.div
@@ -203,9 +216,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                   src={images[currentPage].url}
                   alt={`Page ${currentPage + 1}`}
                   className="w-full cursor-crosshair h-full object-cover rounded-tl-lg rounded-bl-lg"
-                  onClick={(event) =>
-                    handleImageMarker(event, currentPage, false)
-                  }
+                  onClick={(event) => handleImageMarker(event, currentPage)}
                 />
 
                 <img
@@ -216,9 +227,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                   }
                   alt={`Page ${currentPage + 2}`}
                   className="w-full h-full cursor-crosshair object-cover rounded-tr-lg rounded-br-lg"
-                  onClick={(event) =>
-                    handleImageMarker(event, currentPage + 1, true)
-                  }
+                  onClick={(event) => handleImageMarker(event, currentPage + 1)}
                 />
 
                 {markers.map(
@@ -238,6 +247,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                           onClick={() =>
                             setSettings({
                               ...settings,
+                              verticalValue: marker.x,
+                              horizonalValue: marker.y,
                               heading: marker.product,
                             })
                           }
@@ -277,30 +288,46 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 <Draggable>
                   <div className="bg-white absolute top-20 left-20 z-20  border-black border p-6 rounded-lg ml-20 w-3/4 max-w-3xl shadow-lg">
                     <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-lg font-semibold">
-                        {settings.heading === ""
-                          ? "Untitled Product"
-                          : settings.heading}
+                      <h2 className="text-2xl font-semibold text-gray-800">
+                        {settings.heading || "Untitled Product"}
                       </h2>
                       <button
                         onClick={() => setIsSetModal(false)}
-                        className="text-gray-600  hover:text-gray-800"
+                        className="text-gray-600 hover:text-gray-800 text-xl"
                       >
                         &times;
                       </button>
                     </div>
-                    <img
-                      src={selectedMarker.productImage}
-                      alt={selectedMarker.product}
-                      className="w-full h-48 object-contain mb-4"
-                    />
-                    <p>More details here...</p>
-                    <button
-                      onClick={handleRemoveMarker}
-                      className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-                    >
-                      Remove Product
-                    </button>
+
+                    {/* Product Image Section */}
+                    <div className="mb-6">
+                      <img
+                        src={
+                          selectedMarker.productImage ||
+                          "/path/to/demo-image.jpg"
+                        } // Fallback image if no product image
+                        alt={selectedMarker.product || "Demo Product"}
+                        className="w-full h-64 object-cover rounded-lg shadow-sm"
+                      />
+                    </div>
+
+                    {/* Product Description Section */}
+                    <div className="mb-6">
+                      <p className="text-gray-600 text-lg flex flex-col gap-2">
+                        <span>x: {selectedMarker.x}</span>
+                        <span>y: {selectedMarker.y}</span>
+                      </p>
+                    </div>
+
+                    {/* Remove Button */}
+                    <div className="flex justify-end">
+                      <button
+                        onClick={handleRemoveMarker}
+                        className="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition-colors"
+                      >
+                        Remove Product
+                      </button>
+                    </div>
                   </div>
                 </Draggable>
               </div>
@@ -351,8 +378,9 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 className="mt-1 block w-full py-2 px-4 rounded-md border border-gray-400 shadow-sm focus:outline-blue-500   sm:text-sm"
               ></textarea>
             </div>
+
             <div className="flex flex-col gap-4">
-              <p className="font-semibold">Position</p>
+              <p className="font-semibold">Mobile Position</p>
 
               <div className="flex flex-col gap-2">
                 <p>Horizontal</p>
@@ -361,11 +389,11 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                   label=""
                   min={0}
                   max={100}
-                  value={mobileRangeValue}
-                  onChange={handleMobileRangeSliderChange}
+                  value={settings.horizonalValue}
+                  onChange={handleRangeSliderChange}
                   suffix={
                     <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
-                      {mobileRangeValue}
+                      {settings.horizonalValue}
                       <span>%</span>
                     </p>
                   }
@@ -382,11 +410,11 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                   label=""
                   min={0}
                   max={100}
-                  value={mobileVerticalRange}
-                  onChange={handleMobileRangeVerticalSliderChange}
+                  value={settings.verticalValue}
+                  onChange={handleVerticalRangeSliderChange}
                   suffix={
                     <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
-                      {mobileVerticalRange}
+                      {settings.verticalValue}
                       <span>%</span>
                     </p>
                   }
@@ -404,11 +432,11 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                   label=""
                   min={0}
                   max={100}
-                  value={rangeValue}
-                  onChange={handleRangeSliderChange}
+                  value={settings.mobileHorizontalRange}
+                  onChange={handleMobileRangeSliderChange}
                   suffix={
                     <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
-                      {rangeValue}
+                      {settings.mobileHorizontalRange}
                       <span>%</span>
                     </p>
                   }
@@ -425,11 +453,11 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                   label=""
                   min={0}
                   max={100}
-                  value={verticalRange}
-                  onChange={handleVerticalRangeSliderChange}
+                  value={settings.mobileVerticalRange}
+                  onChange={handleMobileRangeVerticalSliderChange}
                   suffix={
                     <p className="min-w-20 rounded-md flex items-center justify-between text-right border-2 border-slate-500 py-2 px-4">
-                      {verticalRange}
+                      {settings.mobileVerticalRange}
                       <span>%</span>
                     </p>
                   }
