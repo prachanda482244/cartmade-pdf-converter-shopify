@@ -1,4 +1,4 @@
-import { useState, MouseEvent, useCallback } from "react";
+import { useState, MouseEvent, useCallback, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
 import { useFetcher } from "@remix-run/react";
@@ -59,18 +59,28 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     mobileVerticalRange: 0,
   });
   const [isShowModal, setIsSetModal] = useState<boolean>(false);
-
-  // Handle click to add marker on the image
+  const containerRef = useRef<HTMLDivElement | null>(null);
 
   const handleImageMarker = async (
     event: MouseEvent<HTMLImageElement>,
     imageIndex: number,
   ) => {
-    const container = document.getElementById("image-container")!;
-    const rect = container.getBoundingClientRect();
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
+    console.log(x);
+    console.log(y);
+
+    const imageWidth = rect.width;
+    const imageHeight = rect.height;
+
+    // Calculate the x and y as percentages
+    const xPercentage = (x / imageWidth) * 100;
+    const yPercentage = (y / imageHeight) * 100;
+    console.log(xPercentage, "x%");
+    console.log(yPercentage, "y%");
     const selected: any = await shopify.resourcePicker({
       type: "product",
       multiple: 1,
@@ -81,8 +91,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
         {
-          x,
-          y,
+          x: x,
+          y: y,
           imageIndex,
           product: selected[0].title,
           productId: selected[0].id,
@@ -198,6 +208,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
         <div className="flex gap-2">
           <div className="flex w-full h-full  flex-col bg-gray-100">
             <div
+              ref={containerRef}
               className="relative h-[80vh] w-full object-cover mx-auto"
               id="image-container"
             >
