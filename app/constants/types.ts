@@ -40,3 +40,10 @@ export interface IMAGES {
   metaFieldId: string;
   pdfName: string;
 }
+
+export interface buttonsNameTypes {
+  index: number;
+  link: string;
+  name: string;
+  component: any;
+}

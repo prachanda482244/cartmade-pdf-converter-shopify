@@ -312,18 +312,6 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           >
             <div className="border-b flex items-center justify-between pb-2 mb-4">
               <p className="font-bold text-xl text-gray-800">Settings</p>
-              <div className="flex gap-2">
-                <Button
-                  onClick={() => setSettings({ ...settings, heading: "" })}
-                  variant="secondary"
-                  tone="critical"
-                >
-                  Cancel
-                </Button>
-                {settings.heading !== "" && (
-                  <Button variant="primary">Save</Button>
-                )}
-              </div>
             </div>
 
             <div className="mb-6">

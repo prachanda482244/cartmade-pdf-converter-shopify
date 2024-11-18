@@ -1,24 +1,19 @@
+import { ClipboardIcon } from "@shopify/polaris-icons";
 import {
-  DropZone,
   LegacyStack,
   Text,
   Page,
-  Button,
-  Icon,
-  Spinner,
   LegacyCard,
   EmptyState,
-  InlineStack,
-  ButtonGroup,
-  Popover,
-  ActionList,
   IndexTable,
   useIndexResourceState,
   Thumbnail,
   Box,
+  Grid,
+  Icon,
+  Select,
 } from "@shopify/polaris";
-import { ChevronDownIcon, DeleteIcon } from "@shopify/polaris-icons";
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   json,
   unstable_parseMultipartFormData,
@@ -26,7 +21,7 @@ import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
 } from "@remix-run/node";
-import { Form, useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
+import { useFetcher, useLoaderData, useNavigate } from "@remix-run/react";
 import path from "path";
 import {
   extractImagesFromPDF,
@@ -39,11 +34,11 @@ import axios from "axios";
 import fs from "fs";
 import { PDFVALUES } from "app/constants/types";
 import { Modal, TitleBar } from "@shopify/app-bridge-react";
+import { progress } from "framer-motion";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop, accessToken } = session;
-  console.log(request.method, "METHOD");
   if (request.method === "POST" || request.method === "post") {
     const uploadHandler = unstable_createFileUploadHandler({
       directory: path.join(process.cwd(), "public", "uploads"),
@@ -192,7 +187,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     imageUrls.forEach((url) => {
       const imagePath = path.join(process.cwd(), "public", url);
-      console.log(imagePath, "PATH");
+      // console.log(imagePath, "PATH");
       fs.unlink(imagePath, (err) => {
         if (err) console.error(`Error deleting file ${imagePath}:`, err);
       });
@@ -309,8 +304,8 @@ const PDFConverter = () => {
   const loader: any = useLoaderData();
   const { pdfData } = useLoaderData<PDFVALUES>();
   const fetcher = useFetcher();
-  console.log(loader, "LOADER");
-  console.log(pdfData, "PDF DATA");
+  // console.log(loader, "LOADER");
+  // console.log(pdfData, "PDF DATA");
   const [deleteId, setDeleteId] = useState<any>();
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -326,17 +321,6 @@ const PDFConverter = () => {
     });
   };
 
-  // const simulateProgress = () => {
-  //   let progress = 0;
-  //   const interval = setInterval(() => {
-  //     progress += 5;
-  //     setUploadProgress(progress);
-  //     if (progress >= 100) {
-  //       clearInterval(interval);
-  //     }
-  //   }, 700);
-  // };
-
   const handlePdfDelete = (id: string) => {
     const metaFieldId = `gid://shopify/Metafield/${id}`;
     const formData = new FormData();
@@ -345,9 +329,41 @@ const PDFConverter = () => {
     setFileUploadTracker(false);
     setDeleteId(id);
   };
-  const navigate = useNavigate();
 
-  console.log(fetcher, "Fetcher");
+  // const simulateProgress = (fetcherState: string) => {
+  //   let progress = 0;
+
+  //   if (fetcherState === "submitting") {
+  //     progress = 70;
+  //   } else if (fetcherState === "loading") {
+  //     progress = 30;
+  //   } else {
+  //     progress = 0;
+  //   }
+
+  //   const interval = setInterval(() => {
+  //     if (fetcherState === "submitting") {
+  //       progress += 5;
+  //     } else if (fetcherState === "loading") {
+  //       progress += 10;
+  //     } else {
+  //       progress = 0;
+  //     }
+
+  //     if (progress >= 100 || progress < 0) {
+  //       progress = 100;
+  //       clearInterval(interval);
+  //     }
+
+  //     setUploadProgress(progress);
+  //   }, 700);
+  // };
+
+  // useEffect(() => {
+  //   simulateProgress(fetcher.state);
+  // }, []);
+
+  const navigate = useNavigate();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -360,11 +376,15 @@ const PDFConverter = () => {
         method: "post",
         encType: "multipart/form-data",
       });
+      fileInputRef.current.value = "";
     }
   };
 
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
-    useIndexResourceState(pdfData);
+    useIndexResourceState(pdfData, {
+      selectedResources: [],
+      resourceIDResolver: (resource) => resource.id,
+    });
   console.log(selectedResources, "SELECTED REou");
   const rowMarkup =
     pdfData?.length &&
@@ -372,13 +392,15 @@ const PDFConverter = () => {
       <IndexTable.Row
         id={id}
         key={id}
-        selected={selectedResources.includes(deleteId)} //id
-        onClick={() => setDeleteId(id)}
+        selected={id === deleteId}
         position={index}
       >
         <IndexTable.Cell>
           <Text variant="bodyMd" fontWeight="bold" as="span">
-            <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
+            <div
+              onClick={() => setDeleteId(id)}
+              className="flex items-center text-xs font-normal text-gray-700 font- gap-2"
+            >
               <Thumbnail alt={pdfName} source={frontPage} size="small" />
               <span
                 onClick={() => navigate(`/app/details/${id}`)}
@@ -415,10 +437,17 @@ const PDFConverter = () => {
   ];
 
   const resourceName = {
-    singular: "order",
-    plural: "orders",
+    singular: "PDF",
+    plural: "PDFs",
   };
 
+  const [view, setView] = useState<string>("grid");
+
+  const handleSelectChange = useCallback((value: string) => setView(value), []);
+  const options = [
+    { label: "LIST", value: "list" },
+    { label: "GRID", value: "grid" },
+  ];
   console.log(deleteId, "DELETE ID");
   return (
     <Page
@@ -464,6 +493,16 @@ const PDFConverter = () => {
           </button>
         </TitleBar>
       </Modal>
+      <div className="mb-2  flex items-center justify-end">
+        <p className="w-[10%]">
+          <Select
+            label={`${view.toUpperCase()} VIEW`}
+            options={options}
+            onChange={handleSelectChange}
+            value={view}
+          />
+        </p>
+      </div>
       {loader.error && fetcher.state !== "submitting" && !pdfData ? (
         <LegacyCard sectioned>
           <EmptyState
@@ -482,14 +521,15 @@ const PDFConverter = () => {
             </p>
           </EmptyState>
         </LegacyCard>
-      ) : (
+      ) : view === "list" ? (
         <Box paddingBlockEnd="400">
           <LegacyCard>
             <IndexTable
               resourceName={resourceName}
-              itemCount={pdfData?.length}
+              itemCount={pdfData?.length || 0}
               selectedItemsCount={
-                allResourcesSelected ? "All" : selectedResources?.length
+                0
+                // allResourcesSelected ? "All" : selectedResources?.length
               }
               promotedBulkActions={promotedBulkActions}
               onSelectionChange={handleSelectionChange}
@@ -508,6 +548,67 @@ const PDFConverter = () => {
             </IndexTable>
           </LegacyCard>
         </Box>
+      ) : (
+        <Grid>
+          {pdfData?.map(({ id, pdfName, frontPage, key }, index) => (
+            <Grid.Cell
+              columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}
+              key={id}
+            >
+              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+                <LegacyCard sectioned>
+                  {/* Card Header */}
+                  <div className="flex justify-between items-center px-6 py-3 border-b border-gray-200">
+                    <p className="text-lg font-semibold text-gray-700">
+                      PDF Details {index + 1}
+                    </p>
+                  </div>
+
+                  {/* Card Body */}
+                  <div className="px-6 py-4">
+                    <div className="flex items-center space-x-4 mb-4">
+                      <div className="flex-shrink-0">
+                        <Thumbnail
+                          alt={pdfName}
+                          source={frontPage}
+                          size="medium"
+                        />
+                      </div>
+                      <div className="flex flex-col justify-between w-full">
+                        <span
+                          onClick={() => navigate(`/app/details/${id}`)}
+                          className="text-xl font-semibold text-gray-800 hover:text-blue-600 cursor-pointer truncate"
+                        >
+                          {pdfName.slice(0, 15)}.pdf
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          Uploaded on Jul 20 at 3:46pm
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center space-x-4">
+                      {/* File Size */}
+                      <div className="text-sm text-gray-500">Size: 647 KB</div>
+
+                      <div
+                        onClick={() => handleCopyKey(key)}
+                        className="flex  items-center text-sm text-blue-500 w-28 hover:bg-blue-50 px-3 py-1 rounded-md  cursor-pointer"
+                      >
+                        <p className="flex items-center ">
+                          <Icon source={ClipboardIcon} tone="base" />
+                          <span className="font-medium">
+                            {copiedKey === key ? "Copied" : "Copy Key"}
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </LegacyCard>
+              </div>
+            </Grid.Cell>
+          ))}
+        </Grid>
       )}
     </Page>
   );
