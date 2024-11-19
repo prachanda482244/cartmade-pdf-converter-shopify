@@ -37,6 +37,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       ),
   );
 
+  console.log(markers);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
 
   const handleNextPage = () => {
@@ -127,6 +128,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           productId: selected[0].id,
           productImage: selected[0]?.images[0]?.originalSrc,
           color: colorPalette[prevMarkers.length % colorPalette.length],
+          xPercentage,
+          yPercentage,
         },
       ]);
     }
@@ -238,7 +241,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           <div className="flex w-full h-full  flex-col bg-gray-100">
             <div
               ref={containerRef}
-              className="relative h-[80vh] w-full object-cover mx-auto"
+              // h-[80vh] w-full
+              className="relative h-[680px] w-[1060px] object-cover mx-auto"
               id="image-container"
             >
               <motion.div

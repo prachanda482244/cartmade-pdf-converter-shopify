@@ -61,7 +61,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const images = formdata.get("images");
     const pdfName = formdata.get("pdfName");
     // console.log(pdfName, "PDF NAME");
-    // console.log(images, "IMAGES");
+
+    console.log(images, "IMAGES");
     // console.log(typeof images, "TYPES OF IMAGES");
     if (typeof images !== "string") {
       return {

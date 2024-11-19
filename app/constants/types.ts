@@ -20,6 +20,8 @@ export interface Marker {
   product: string;
   productImage: string;
   color: string;
+  xPercentage: number;
+  yPercentage: number;
 }
 
 interface ImageData {

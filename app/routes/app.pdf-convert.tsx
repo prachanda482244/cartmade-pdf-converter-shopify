@@ -324,9 +324,10 @@ const PDFConverter = () => {
 
   const dispatch = useDispatch();
   const plan = useSelector((state: any) => state.plan.plan);
+  console.log(loader, "LOADER");
   useEffect(() => {
-    dispatch(addPlan(loader.pricePlan.name));
-  }, [loader.pricePlan.name]);
+    dispatch(addPlan(loader.pricePlan && loader?.pricePlan?.name));
+  }, [loader.pricePlan && loader?.pricePlan.name]);
 
   const planType = plan || "Free";
 
@@ -477,7 +478,7 @@ const PDFConverter = () => {
     plural: "PDFs",
   };
 
-  const [view, setView] = useState<string>("grid");
+  const [view, setView] = useState<string>("list");
 
   const handleSelectChange = useCallback((value: string) => setView(value), []);
   const options = [
