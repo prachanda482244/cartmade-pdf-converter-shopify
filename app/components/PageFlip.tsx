@@ -10,9 +10,12 @@ import {
   Pagination,
   RangeSlider,
 } from "@shopify/polaris";
+import { useSelector } from "react-redux";
 
 const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
   const fetcher = useFetcher();
+  const plan = useSelector((state: any) => state.plan.plan);
+  console.log(plan, "PLANNING");
 
   const colorPalette = [
     "#FF5733",
@@ -66,6 +69,32 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     imageIndex: number,
   ) => {
     if (!containerRef.current) return;
+
+    let maxMarkers = 0;
+    if (plan === "Free") {
+      maxMarkers = 3;
+    } else if (plan === "Basic") {
+      maxMarkers = 3;
+    } else if (plan === "Advanced") {
+      maxMarkers = Infinity;
+    }
+
+    const currentMarkersForPage = markers.filter(
+      (marker) => marker.imageIndex === imageIndex,
+    );
+    const totalMarkers = markers.length;
+
+    if (plan === "Free" && totalMarkers >= maxMarkers) {
+      shopify.toast.show(
+        "You have reached the maximum marker limit for your plan.",
+      );
+      return;
+    }
+
+    if (plan === "Basic" && currentMarkersForPage.length >= maxMarkers) {
+      shopify.toast.show("You can only add 3 markers per page for your plan.");
+      return;
+    }
     const rect = containerRef.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;

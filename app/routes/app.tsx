@@ -5,8 +5,9 @@ import { boundary } from "@shopify/shopify-app-remix/server";
 import { AppProvider } from "@shopify/shopify-app-remix/react";
 import { NavMenu } from "@shopify/app-bridge-react";
 import polarisStyles from "@shopify/polaris/build/esm/styles.css?url";
-
+import { Provider } from "react-redux";
 import { authenticate } from "../shopify.server";
+import { store } from "app/store/store";
 
 export const links = () => [{ rel: "stylesheet", href: polarisStyles }];
 
@@ -20,18 +21,20 @@ export default function App() {
 
   return (
     <AppProvider isEmbeddedApp apiKey={apiKey}>
-      <NavMenu>
-        <Link to="/app" rel="home">
-          Home
-        </Link>
-        <Link to="/app/pdf-convert">settings</Link>
-        <Link to="/app/global-settings">global settings</Link>
-        <Link to="/app/subscription">subscription</Link>
-        {/* <Link to="/app/framer-motion">Framer motion</Link> */}
-        {/* <Link to="/app/pageflip">Page flip</Link> */}
-        {/* <Link to="/app/additional">Additional page</Link> */}
-      </NavMenu>
-      <Outlet />
+      <Provider store={store}>
+        <NavMenu>
+          <Link to="/app" rel="home">
+            Home
+          </Link>
+          <Link to="/app/pdf-convert">settings</Link>
+          <Link to="/app/global-settings">global settings</Link>
+          <Link to="/app/subscription">subscription</Link>
+          {/* <Link to="/app/framer-motion">Framer motion</Link> */}
+          {/* <Link to="/app/pageflip">Page flip</Link> */}
+          {/* <Link to="/app/additional">Additional page</Link> */}
+        </NavMenu>
+        <Outlet />
+      </Provider>
     </AppProvider>
   );
 }

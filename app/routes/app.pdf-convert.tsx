@@ -35,6 +35,8 @@ import fs from "fs";
 import { PDFVALUES } from "app/constants/types";
 import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { progress } from "framer-motion";
+import { useDispatch, useSelector } from "react-redux";
+import { addPlan } from "app/store/slices/planSlice";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -242,7 +244,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
+  const {
+    admin,
+    session: { accessToken, shop },
+  } = await authenticate.admin(request);
+
+  const { data: pricePlan } = await axios.get(
+    `https://${shop}/admin/api/${apiVersion}/recurring_application_charges.json        `,
+    {
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+      },
+    },
+  );
 
   const GET_PDF_QUERY = `
     query GetPDFQuery {
@@ -293,7 +307,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }));
 
     // console.log(actualResponse, "ACtual response");
-    return { pdfData: actualResponse };
+    return {
+      pdfData: actualResponse,
+      pricePlan: pricePlan.recurring_application_charges[0],
+    };
   } catch (error) {
     console.error("Error fetching PDF metafields:", error);
     return { error: "Unexpected error occurred while fetching metafields." };
@@ -304,12 +321,24 @@ const PDFConverter = () => {
   const loader: any = useLoaderData();
   const { pdfData } = useLoaderData<PDFVALUES>();
   const fetcher = useFetcher();
-  // console.log(loader, "LOADER");
-  // console.log(pdfData, "PDF DATA");
+
+  const dispatch = useDispatch();
+  const plan = useSelector((state: any) => state.plan.plan);
+  useEffect(() => {
+    dispatch(addPlan(loader.pricePlan.name));
+  }, [loader.pricePlan.name]);
+
+  const planType = plan || "Free";
+
+  const maxUploads =
+    planType === "Free" ? 1 : planType === "Basic" ? 5 : Infinity;
+  console.log(planType, "PRICEPLAn");
   const [deleteId, setDeleteId] = useState<any>();
+
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [uploadCount, setUploadCount] = useState(pdfData ? pdfData.length : 0);
 
   const handleCopyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
@@ -368,6 +397,12 @@ const PDFConverter = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = () => {
+    if (uploadCount >= maxUploads) {
+      alert(
+        `You can only upload up to ${maxUploads} PDFs based on your current plan.`,
+      );
+      return;
+    }
     const file = fileInputRef.current?.files?.[0];
     if (file) {
       const formData = new FormData();
@@ -376,6 +411,7 @@ const PDFConverter = () => {
         method: "post",
         encType: "multipart/form-data",
       });
+      setUploadCount(uploadCount + 1);
       fileInputRef.current.value = "";
     }
   };
@@ -448,6 +484,8 @@ const PDFConverter = () => {
     { label: "LIST", value: "list" },
     { label: "GRID", value: "grid" },
   ];
+  console.log(maxUploads);
+  console.log(uploadCount, "UPLOADCOUTN");
   console.log(deleteId, "DELETE ID");
   return (
     <Page
@@ -456,7 +494,13 @@ const PDFConverter = () => {
         loading: fetcher.state === "submitting",
         content: "Upload PDF",
         onAction: () => {
-          fileInputRef.current?.click();
+          if (uploadCount >= maxUploads) {
+            shopify.toast.show(
+              `You can only upload up to ${maxUploads} PDFs based on your current plan.`,
+            );
+          } else {
+            fileInputRef.current?.click();
+          }
         },
       }}
       title="PDFs"
@@ -470,6 +514,7 @@ const PDFConverter = () => {
         name="pdf"
         id="pdfupload"
       />
+
       {/* Main section  */}
       <Modal id="deleteModal">
         <Box padding="300">
@@ -528,7 +573,7 @@ const PDFConverter = () => {
               resourceName={resourceName}
               itemCount={pdfData?.length || 0}
               selectedItemsCount={
-                0
+                1
                 // allResourcesSelected ? "All" : selectedResources?.length
               }
               promotedBulkActions={promotedBulkActions}

@@ -24,6 +24,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.11.0",
+    "@reduxjs/toolkit": "^2.3.0",
     "@remix-run/dev": "^2.7.1",
     "@remix-run/node": "^2.7.1",
     "@remix-run/react": "^2.7.1",
@@ -43,6 +44,7 @@
     "react-dom": "^18.2.0",
     "react-draggable": "^4.4.6",
     "react-pageflip": "^2.0.3",
+    "react-redux": "^9.1.2",
     "vite-tsconfig-paths": "^5.0.1",
     "wiggle": "^0.0.17"
   },
