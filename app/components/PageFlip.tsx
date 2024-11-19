@@ -232,9 +232,6 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           onAction: handleSave,
           loading: fetcher.state === "submitting",
         }}
-        secondaryActions={
-          <Button onClick={() => alert("settings")}>Settings</Button>
-        }
         fullWidth
       >
         <div className="flex gap-2">
@@ -242,7 +239,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
             <div
               ref={containerRef}
               // h-[80vh] w-full
-              className="relative h-[680px] w-[1060px] object-cover mx-auto"
+              className="relative h-[680px] w-[1360px] object-cover mx-auto"
               id="image-container"
             >
               <motion.div
@@ -378,7 +375,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
             )}
           </div>
 
-          <div
+          {/* <div
             className={`w-[25%] ${settings?.heading === "" ? "opacity-50 pointer-events-none" : "opacity-100"} h-[680px] overflow-y-scroll  rounded-lg  p-4 bg-white`}
           >
             <div className="border-b flex items-center justify-between pb-2 mb-4">
@@ -509,7 +506,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 <p className="font-light">Vertical position of the hot spot</p>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </Page>
     </div>
