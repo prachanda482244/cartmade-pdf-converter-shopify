@@ -1,13 +1,96 @@
 const flipBook = (elBook) => {
-  elBook.style.setProperty("--c", 0);
-  elBook.querySelectorAll(".page").forEach((page, idx) => {
-    page.style.setProperty("--i", idx);
-    page.addEventListener("click", (evt) => {
-      if (evt.target.closest("a")) return;
-      const curr = evt.target.closest(".back") ? idx : idx + 1;
-      elBook.style.setProperty("--c", curr);
+  let currentPage = 0;
+  const pages = elBook.querySelectorAll(".page");
+  const totalPages = pages.length;
+  let points = [];
+
+  const getPoints = (pageElement) => {
+    return pageElement ? pageElement.querySelectorAll(".points") : [];
+  };
+
+  const updatePage = (newPage) => {
+    currentPage = Math.max(0, Math.min(newPage, totalPages - 1));
+    elBook.style.setProperty("--c", currentPage);
+
+    const leftPage =
+      currentPage > 0
+        ? pages[currentPage - 1].querySelector(".back,.tooltip")
+        : null;
+    const rightPage =
+      currentPage < totalPages - 1
+        ? pages[currentPage + 1].querySelector(".front,.tooltip")
+        : null;
+
+    console.log(leftPage, "LEFT");
+    const leftPoints = getPoints(leftPage);
+    const rightPoints = getPoints(rightPage);
+
+    points = [];
+    if (leftPoints.length > 0) {
+      console.log("Points found on left page:");
+      leftPoints.forEach((point, index) => {
+        points.push(point);
+      });
+    } else {
+      console.log("No points found on left page.");
+    }
+
+    if (rightPoints.length > 0) {
+      rightPoints.forEach((point, index) => {
+        points.push(point);
+      });
+    } else {
+      console.log("No points found on right page.");
+    }
+
+    points.forEach((point) => {
+      point.addEventListener("click", (event) => {
+        if (document.querySelector("div[data-hotspot-id]:not(.hidden)"))
+          document
+            .querySelector("div[data-hotspot-id]:not(.hidden)")
+            .classList.toggle("hidden");
+
+        const hotspotId = event.target
+          .closest(".points")
+          ?.getAttribute("data-id");
+        if (!hotspotId) {
+          console.error("No data-id found for the clicked point");
+          return;
+        }
+
+        const targetPopover = document.querySelector(
+          `div[data-hotspot-id="${hotspotId}"]`,
+        );
+        if (targetPopover) {
+          targetPopover.classList.toggle("hidden");
+        } else {
+          console.error(`No popover found for data-hotspot-id: ${hotspotId}`);
+        }
+      });
     });
+  };
+
+  pages.forEach((page, idx) => {
+    page.style.setProperty("--i", idx);
   });
+
+  console.log("Checked");
+  const prevBtn = document.querySelector(".prev");
+  const nextBtn = document.querySelector(".next");
+
+  prevBtn.addEventListener("click", () => updatePage(currentPage - 1));
+  nextBtn.addEventListener("click", () => updatePage(currentPage + 1));
+
+  updatePage(0);
 };
 
 document.querySelectorAll(".book").forEach(flipBook);
+
+const dynamicContent = (title, id) => {
+  return `
+  <div class="absolute top-8 left-10">
+  ${title}
+  ${id}
+  </div>
+  `;
+};

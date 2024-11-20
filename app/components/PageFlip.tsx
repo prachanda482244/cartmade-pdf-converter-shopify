@@ -124,6 +124,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           x: x,
           y: y,
           imageIndex,
+          handle: selected[0].handle,
           product: selected[0].title,
           productId: selected[0].id,
           productImage: selected[0]?.images[0]?.originalSrc,
