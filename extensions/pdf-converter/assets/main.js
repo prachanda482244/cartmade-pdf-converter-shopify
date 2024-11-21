@@ -66,6 +66,52 @@ const flipBook = (elBook) => {
         } else {
           console.error(`No popover found for data-hotspot-id: ${hotspotId}`);
         }
+        let variantId;
+        const submitButton = targetPopover.querySelector("button");
+        const selectedVariant = targetPopover.querySelector("select");
+        console.log(selectedVariant, "FUcking selected variant");
+
+        // variantId = targetPopover.querySelector("input[name='id']").value;
+        if (selectedVariant) {
+          selectedVariant.addEventListener("change", (e) => {
+            variantId =
+              e.target.value ||
+              targetPopover.querySelector("input[name='id']").value;
+            console.log(e.target.value, "Selectted onchange");
+          });
+        }
+        submitButton.addEventListener("click", (e) => {
+          e.preventDefault();
+
+          const formData = new FormData();
+          formData.append("id", variantId);
+          console.log(variantId, "VRIANLT");
+          fetch("/cart/add.js", {
+            method: "POST",
+            body: formData,
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              console.log("Product added to cart:", data);
+
+              const hotspotId = event.target.closest(".points").dataset.id;
+              const targetPopover = document.querySelector(
+                `div[data-hotspot-id="${hotspotId}"]`,
+              );
+              if (targetPopover) {
+                targetPopover.classList.add("hidden");
+              }
+
+              alert("Product added to your cart!");
+            })
+            .catch((error) => {
+              console.error("Error adding product to cart:", error);
+              alert(
+                "There was an error adding the product to the cart. Please try again.",
+              );
+            });
+        });
+        console.log(targetPopover, "TARGET POPER");
       });
     });
   };
@@ -85,12 +131,3 @@ const flipBook = (elBook) => {
 };
 
 document.querySelectorAll(".book").forEach(flipBook);
-
-const dynamicContent = (title, id) => {
-  return `
-  <div class="absolute top-8 left-10">
-  ${title}
-  ${id}
-  </div>
-  `;
-};

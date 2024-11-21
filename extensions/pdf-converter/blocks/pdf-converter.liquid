@@ -15,7 +15,7 @@
 {% assign pageIndex = forloop.index | minus: 1 %}
 {% for point in image.points %}
 {% assign hotSpotIndex = forloop.index %}
-{{point.handle}}
+{% comment %} {{point.handle}} {% endcomment %}
 {% render 'tooltip', data_page_index: pageIndex, data_hotspot_index:hotSpotIndex,
 handle:point.handle %}
 {% endfor %}
@@ -24,9 +24,9 @@ handle:point.handle %}
 
 <p>Hello back</p>
 
+<button class="prev border py-2 px-4 rounded-sm shadow-lg bg-black text-white">Previous</button>
+<button class="next border py-2 px-4 rounded-sm shadow-lg bg-transparent text-black">Next</button>
 <div class="body">
-    <button class="prev">Previous</button>
-    <button class="next">Next</button>
     <div class="book">
         <div class="page">
 
@@ -39,7 +39,7 @@ handle:point.handle %}
 
                 {% for point in points %}
                 <div data-id="hotspot-0-{{forloop.index}}"
-                    class="custom-hotspot points absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[123px] ">
+                    class="custom-hotspot points absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2}}px] ">
                     <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
                         <span class="h-4 w-4 rounded-full bg-white"></span>
                     </p>
@@ -66,7 +66,7 @@ handle:point.handle %}
                     {% for point in points %}
 
                     <div data-id="hotspot-{{index}}-{{forloop.index}}"
-                        class="points absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
+                        class="points absolute z-[999] top-[{{point.y | divided_by: 4 | abs}}px] left-[{{point.x |  divided_by: 4 | abs}}px] ">
                         <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
                             <span class="h-4 w-4 rounded-full bg-white"></span>
                         </p>
@@ -100,8 +100,6 @@ handle:point.handle %}
                 </div>
                 {% endfor %}
             </div>
-
-
         </div>
         {% assign index = nextIndex | plus:1 %}
         {% endfor %}

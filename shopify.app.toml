@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://carol-contributor-ecological-shannon.trycloudflare.com"
+application_url = "https://apparel-icq-descriptions-destination.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://carol-contributor-ecological-shannon.trycloudflare.com/auth/callback",
-  "https://carol-contributor-ecological-shannon.trycloudflare.com/auth/shopify/callback",
-  "https://carol-contributor-ecological-shannon.trycloudflare.com/api/auth/callback"
+  "https://apparel-icq-descriptions-destination.trycloudflare.com/auth/callback",
+  "https://apparel-icq-descriptions-destination.trycloudflare.com/auth/shopify/callback",
+  "https://apparel-icq-descriptions-destination.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
