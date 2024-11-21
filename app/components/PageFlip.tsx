@@ -106,7 +106,6 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
     const imageWidth = rect.width;
     const imageHeight = rect.height;
 
-    // Calculate the x and y as percentages
     const xPercentage = (x / imageWidth) * 100;
     const yPercentage = (y / imageHeight) * 100;
     console.log(xPercentage, "x%");
@@ -135,6 +134,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       ]);
     }
   };
+
+  console.log(markers, "MARKERS");
 
   const handleMarkerClick = (marker: Marker) => {
     setSelectedMarker(marker);

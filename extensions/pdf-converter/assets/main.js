@@ -69,7 +69,6 @@ const flipBook = (elBook) => {
         let variantId;
         const submitButton = targetPopover.querySelector("button");
         const selectedVariant = targetPopover.querySelector("select");
-        console.log(selectedVariant, "FUcking selected variant");
 
         if (selectedVariant) {
           selectedVariant.addEventListener("change", (e) => {
@@ -99,8 +98,11 @@ const flipBook = (elBook) => {
               if (targetPopover) {
                 targetPopover.classList.add("hidden");
               }
-
-              alert("Product added to your cart!");
+              if (!data) {
+                alert("Failed to add product");
+              } else {
+                alert("Product added to your cart!");
+              }
             })
             .catch((error) => {
               console.error("Error adding product to cart:", error);
