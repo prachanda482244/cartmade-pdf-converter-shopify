@@ -71,14 +71,12 @@ const flipBook = (elBook) => {
         const selectedVariant = targetPopover.querySelector("select");
         console.log(selectedVariant, "FUcking selected variant");
 
-        // variantId = targetPopover.querySelector("input[name='id']").value;
         if (selectedVariant) {
           selectedVariant.addEventListener("change", (e) => {
-            variantId =
-              e.target.value ||
-              targetPopover.querySelector("input[name='id']").value;
-            console.log(e.target.value, "Selectted onchange");
+            variantId = e.target.value;
           });
+        } else {
+          variantId = targetPopover.querySelector("input[name='id']").value;
         }
         submitButton.addEventListener("click", (e) => {
           e.preventDefault();
