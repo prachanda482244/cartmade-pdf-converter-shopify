@@ -1,3 +1,14 @@
+import { IconSource } from "@shopify/polaris";
+
+import {
+  XIcon,
+  ClipboardIcon,
+  CollectionIcon,
+  CreditCardIcon,
+  DeliveryIcon,
+  ArrowRightIcon,
+  CartIcon,
+} from "@shopify/polaris-icons";
 export interface PDFVALUES {
   pdfData: {
     id: string;
@@ -48,4 +59,34 @@ export interface buttonsNameTypes {
   link: string;
   name: string;
   component: any;
+}
+
+export interface IconItems {
+  label: string;
+  name: string;
+  icon: IconSource | any;
+}
+export interface ButtonSettings {
+  buttonSettings: {
+    jsonValue: {
+      buttonText: string;
+      subtitle: string;
+      icon: string;
+      sticky: boolean;
+      fontSize: number;
+      borderRadius: number;
+      borderWidth: number;
+      shadow: number;
+      borderColor: string;
+      backgroundColor: string;
+      textColor: string;
+    };
+  };
+}
+export interface HotspotProps {
+  id: string;
+  svg: string;
+  color: string;
+  hoverColor: string;
+  label: string;
 }
