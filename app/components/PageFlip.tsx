@@ -356,7 +356,7 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
                         <div className="Polaris-MediaCard">
                           <div
                             onClick={() => setSelectedMarker(null)}
-                            className="crossbtn cursor-pointer absolute z-20 right-2 top-1"
+                            className="crossbtn cursor-pointer absolute z-20 right-2 top-2"
                           >
                             <Icon source={XIcon} tone="critical" />
                           </div>
@@ -372,7 +372,7 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
                               }
                             />
                           </div>
-                          <div className="Polaris-MediaCard__InfoContainer p-6">
+                          <div className="Polaris-MediaCard__InfoContainer p-6 pt-8 border border-l">
                             <div className="Polaris-Box">
                               <div className="Polaris-BlockStack">
                                 <div className="Polaris-InlineStack">
@@ -398,13 +398,7 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
                                 </div>
 
                                 <div className="flex gap-2 items-center">
-                                  <Button
-                                  // onClick={() => {
-                                  //   window.location.href = `https://admin.shopify.com/store/${shopName.replace(".myshopify.com", "")}/products/${selectedMarker.productId.split("/")[selectedMarker.productId.split("/").length - 1]}`;
-                                  // }}
-                                  >
-                                    View Product
-                                  </Button>
+                                  <Button>View Product</Button>
                                   <Button
                                     onClick={handleRemoveMarker}
                                     variant="primary"
