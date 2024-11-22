@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://workers-contest-lewis-protocols.trycloudflare.com"
+application_url = "https://isaac-marvel-involving-excessive.trycloudflare.com"
 embedded = true
 
 [build]
@@ -17,9 +17,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://workers-contest-lewis-protocols.trycloudflare.com/auth/callback",
-  "https://workers-contest-lewis-protocols.trycloudflare.com/auth/shopify/callback",
-  "https://workers-contest-lewis-protocols.trycloudflare.com/api/auth/callback"
+  "https://isaac-marvel-involving-excessive.trycloudflare.com/auth/callback",
+  "https://isaac-marvel-involving-excessive.trycloudflare.com/auth/shopify/callback",
+  "https://isaac-marvel-involving-excessive.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

@@ -10,7 +10,10 @@ import PageFlip from "app/components/PageFlip";
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const id = url.pathname.split("/").pop();
-  const { admin } = await authenticate.admin(request);
+  const {
+    admin,
+    session: { shop },
+  } = await authenticate.admin(request);
   const metafieldId = `gid://shopify/Metafield/${id}`;
   const META_FIELD_QUERY = `
   query getMetafield($id: ID!) {
@@ -44,7 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         pdfName: data.node.jsonValue.pdfName,
         images: data.node.jsonValue.images,
       };
-      return json({ pdfData });
+      return json({ pdfData, shop });
     } catch (error) {
       console.error("Error fetching PDF metafields:", error);
       return { error: "Unexpected error occurred while fetching metafield." };
@@ -100,6 +103,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return null;
 };
 const DetailPage = () => {
+  const loaderData: any = useLoaderData();
   const { pdfData }: any = useLoaderData();
   return (
     <div>
@@ -107,6 +111,7 @@ const DetailPage = () => {
         pdfName={pdfData.pdfName}
         images={pdfData.images}
         metaFieldId={pdfData.id}
+        shopName={loaderData.shop}
       />
     </div>
   );

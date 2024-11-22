@@ -21,6 +21,10 @@ export interface Marker {
   productImage: string;
   color: string;
   xPercentage: number;
+  handle: string;
+  comparedPrice: string;
+  price: string;
+  description: string;
   yPercentage: number;
 }
 
@@ -38,6 +42,7 @@ export interface SINGLEPDF {
 }
 
 export interface IMAGES {
+  shopName: string;
   images: ImageData[];
   metaFieldId: string;
   pdfName: string;

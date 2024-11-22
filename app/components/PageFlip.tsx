@@ -1,4 +1,5 @@
 import { useState, MouseEvent, useCallback, useRef, useEffect } from "react";
+import { XIcon } from "@shopify/polaris-icons";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
 import { useFetcher } from "@remix-run/react";
@@ -6,21 +7,20 @@ import { IMAGES, Marker } from "app/constants/types";
 import {
   Button,
   Card,
+  Icon,
   Layout,
   LegacyCard,
   MediaCard,
   Page,
   Pagination,
   RangeSlider,
+  Thumbnail,
 } from "@shopify/polaris";
 import { useSelector } from "react-redux";
-import { Modal, TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 
-const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
-  const shopify = useAppBridge();
+const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
   const fetcher = useFetcher();
   const plan = useSelector((state: any) => state.plan.plan);
-  console.log(plan, "PLANNING");
 
   const colorPalette = [
     "#FF5733",
@@ -121,6 +121,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       filter: { variants: false, archived: false, draft: false },
     });
 
+    console.log(selected[0], "SELECTRTEd");
     if (selected && selected.length > 0) {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
@@ -128,6 +129,9 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           x: x,
           y: y,
           imageIndex,
+          comparedPrice: selected[0].variants[0].compareAtPrice,
+          description: selected[0].descriptionHtml,
+          price: selected[0].variants[0].price,
           handle: selected[0].handle,
           product: selected[0].title,
           productId: selected[0].id,
@@ -229,6 +233,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       }),
     [],
   );
+  console.log(shopName);
+  console.log(selectedMarker, "SELECTRE MDSLAFSE:LJ");
 
   return (
     <div className="w-[80%]">
@@ -239,9 +245,9 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           onAction: handleSave,
           loading: fetcher.state === "submitting",
         }}
-        fullWidth 
+        fullWidth
       >
-        <Layout >
+        <Layout>
           <Card background="bg-surface-secondary">
             <div
               ref={containerRef}
@@ -261,29 +267,29 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 onAnimationComplete={() => setAnimate(false)}
               >
                 {/* Make a parent div relative ref  */}
-                <div  >
-                <img
-                  src={images[currentPage].url}
-                  alt={`Page ${currentPage + 1}`}
-                  className="w-full cursor-crosshair h-full object-contain rounded-tl-lg rounded-bl-lg"
-                  onClick={(event) => handleImageMarker(event, currentPage)}
-                />
+                <div>
+                  <img
+                    src={images[currentPage].url}
+                    alt={`Page ${currentPage + 1}`}
+                    className="w-full cursor-crosshair h-full object-contain rounded-tl-lg rounded-bl-lg"
+                    onClick={(event) => handleImageMarker(event, currentPage)}
+                  />
                 </div>
 
-<div>
-
-                <img
-                  src={
-                    currentPage + 1 < images.length
-                      ? images[currentPage + 1].url
-                      : images[currentPage].url
-                  }
-                  alt={`Page ${currentPage + 2}`}
-                  className="w-full h-full cursor-crosshair object-contain rounded-tr-lg rounded-br-lg"
-                  onClick={(event) => handleImageMarker(event, currentPage + 1)}
-                />
-</div>
-
+                <div>
+                  <img
+                    src={
+                      currentPage + 1 < images.length
+                        ? images[currentPage + 1].url
+                        : images[currentPage].url
+                    }
+                    alt={`Page ${currentPage + 2}`}
+                    className="w-full h-full cursor-crosshair object-contain rounded-tr-lg rounded-br-lg"
+                    onClick={(event) =>
+                      handleImageMarker(event, currentPage + 1)
+                    }
+                  />
+                </div>
 
                 {markers.map(
                   (marker, index) =>
@@ -299,17 +305,15 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                         <div
                           className="absolute flex justify-center items-center text-white text-sm h-6 w-6 rounded-full shadow-lg cursor-pointer animate-pulse"
                           style={{ backgroundColor: marker.color }}
-                          onClick={() =>
-                          {
-                            handleMarkerClick(marker)
+                          onClick={() => {
+                            handleMarkerClick(marker);
                             setSettings({
                               ...settings,
                               verticalValue: marker.x,
                               horizonalValue: marker.y,
                               heading: marker.product,
-                            })
-                          }
-                        }
+                            });
+                          }}
 
                           // onDoubleClick={() => handleMarkerClick(marker)}
                         >
@@ -334,17 +338,6 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
               </motion.div>
             </div>
 
-            <button onClick={() => shopify.modal.show('my-modal')}>Open Modal</button>
-      <Modal id="my-modal">
-        
-        <TitleBar title="Title">
-          
-          
-          <button variant="primary">Label</button>
-          <button onClick={() => shopify.modal.hide('my-modal')}>Label</button>
-        </TitleBar>
-      </Modal>
-      
             <div className="flex items-center justify-center w-full mt-2">
               <Pagination
                 label="Pagination"
@@ -355,34 +348,84 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
               />
             </div>
             {selectedMarker && (
-              <div className="w-full border-2 absolute  bg-gray-700 h-screen">
+              <div className="">
+                <div className=" Polaris-Modal-Dialog__Container w-[80%]">
+                  <div className="Polaris-Modal-Dialog__Modal Polaris-Modal-Dialog--sizeFullScreen">
+                    <div className="Polaris-Box">
+                      <div className="Polaris-LegacyCard">
+                        <div className="Polaris-MediaCard">
+                          <div
+                            onClick={() => setSelectedMarker(null)}
+                            className="crossbtn cursor-pointer absolute z-20 right-2 top-1"
+                          >
+                            <Icon source={XIcon} tone="critical" />
+                          </div>
+                          <div className="Polaris-MediaCard__MediaContainer">
+                            <img
+                              alt={selectedMarker.product}
+                              width="100%"
+                              height="100%"
+                              className="h-full object-cover"
+                              src={
+                                selectedMarker.productImage ||
+                                "https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+                              }
+                            />
+                          </div>
+                          <div className="Polaris-MediaCard__InfoContainer p-6">
+                            <div className="Polaris-Box">
+                              <div className="Polaris-BlockStack">
+                                <div className="Polaris-InlineStack">
+                                  <div>
+                                    <h2 className="Polaris-Text--root Polaris-Text--headingLg pb-2">
+                                      {selectedMarker.product}
+                                    </h2>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="">
+                                <p className="Polaris-Text--root Polaris-Text--bodySm pb-2">
+                                  {selectedMarker.description ||
+                                    "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Harum quos unde, dolore facere incidunt voluptates consectetur veritatis recusandae numquam nesciunt voluptate dolor ratione perferendis nam earum tenetur, asperiores maxime aperiam reprehenderit neque debitis deleniti?"}
+                                </p>
+                                <div className="pb-2 flex items-center  gap-2">
+                                  <p className="line-through">
+                                    {selectedMarker.comparedPrice}
+                                  </p>
+                                  <p className="text-lg font-semibold">
+                                    {selectedMarker.price}
+                                  </p>
+                                </div>
 
-              <div className=" absolute top-20  left-2 w-[40%]">
-  
-                  <MediaCard
-                    title="Getting Started"
-                    primaryAction={{
-                      content: 'Learn about getting started',
-                      onAction: () => {},
-                    }}
-                    description="Discover how Shopify can power up your entrepreneurial journey."
-                    popoverActions={[{content: 'Dismiss', onAction: () => {}}]}
-                  >
-                    <img
-                      alt=""
-                      width="100%"
-                      height="100%"
-                      style={{
-                        objectFit: 'cover',
-                        objectPosition: 'center',
-                      }}
-                      src="https://burst.shopifycdn.com/photos/business-woman-smiling-in-office.jpg?width=1850"
-                    />
-                  </MediaCard>
+                                <div className="flex gap-2 items-center">
+                                  <Button
+                                  // onClick={() => {
+                                  //   window.location.href = `https://admin.shopify.com/store/${shopName.replace(".myshopify.com", "")}/products/${selectedMarker.productId.split("/")[selectedMarker.productId.split("/").length - 1]}`;
+                                  // }}
+                                  >
+                                    View Product
+                                  </Button>
+                                  <Button
+                                    onClick={handleRemoveMarker}
+                                    variant="primary"
+                                    tone="critical"
+                                  >
+                                    Remove product
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
+                </div>
+                <div
+                  className="Polaris-Backdrop"
+                  onClick={() => setSelectedMarker(null)}
+                ></div>
               </div>
-
-
             )}
           </Card>
 

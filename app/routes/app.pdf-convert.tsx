@@ -1,10 +1,6 @@
 import { ClipboardIcon } from "@shopify/polaris-icons";
-import {
-  ListBulletedIcon
-} from '@shopify/polaris-icons';
-import {
-  LayoutColumns3Icon
-} from '@shopify/polaris-icons';
+import { ListBulletedIcon } from "@shopify/polaris-icons";
+import { LayoutColumns3Icon } from "@shopify/polaris-icons";
 import {
   LegacyStack,
   Text,
@@ -485,9 +481,9 @@ const PDFConverter = () => {
     plural: "PDFs",
   };
 
-const [view, setView] = useState<string>("list");
-const [buttonListActive,setButtonListActive] = useState<boolean>(false)
-const [buttonGridActive,setButtonGridActive] = useState<boolean>(false)
+  const [view, setView] = useState<string>("list");
+  const [buttonListActive, setButtonListActive] = useState<boolean>(false);
+  const [buttonGridActive, setButtonGridActive] = useState<boolean>(false);
 
   console.log(maxUploads);
   console.log(uploadCount, "UPLOADCOUTN");
@@ -543,23 +539,25 @@ const [buttonGridActive,setButtonGridActive] = useState<boolean>(false)
           </button>
         </TitleBar>
       </Modal>
-      <div className="mb-2 gap-4 flex items-center justify-end mb-4">
-       
-      <Button
-      icon={LayoutColumns3Icon} 
+      <div className=" gap-2 flex items-center justify-end mb-4">
+        <Button
+          icon={LayoutColumns3Icon}
           pressed={buttonGridActive}
-      onClick={()=>{
-        setView("list")
-        setButtonGridActive(true)
-        setButtonListActive(false)
-      }}>
- 
-      </Button>
-       <Button pressed={buttonListActive} icon={ListBulletedIcon}  onClick={()=>{
-        setView("grid")
-        setButtonListActive(true)
-        setButtonGridActive(false)
-       }}></Button>
+          onClick={() => {
+            setView("list");
+            setButtonGridActive(true);
+            setButtonListActive(false);
+          }}
+        ></Button>
+        <Button
+          pressed={buttonListActive}
+          icon={ListBulletedIcon}
+          onClick={() => {
+            setView("grid");
+            setButtonListActive(true);
+            setButtonGridActive(false);
+          }}
+        ></Button>
       </div>
       {loader.error && fetcher.state !== "submitting" && !pdfData ? (
         <LegacyCard sectioned>
