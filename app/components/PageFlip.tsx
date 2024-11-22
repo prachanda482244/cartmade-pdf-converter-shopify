@@ -5,14 +5,19 @@ import { useFetcher } from "@remix-run/react";
 import { IMAGES, Marker } from "app/constants/types";
 import {
   Button,
+  Card,
+  Layout,
   LegacyCard,
+  MediaCard,
   Page,
   Pagination,
   RangeSlider,
 } from "@shopify/polaris";
 import { useSelector } from "react-redux";
+import { Modal, TitleBar, useAppBridge } from "@shopify/app-bridge-react";
 
 const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
+  const shopify = useAppBridge();
   const fetcher = useFetcher();
   const plan = useSelector((state: any) => state.plan.plan);
   console.log(plan, "PLANNING");
@@ -234,18 +239,18 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           onAction: handleSave,
           loading: fetcher.state === "submitting",
         }}
-        fullWidth
+        fullWidth 
       >
-        <div className="flex gap-2">
-          <div className="flex w-full h-full  flex-col bg-gray-100">
+        <Layout >
+          <Card background="bg-surface-secondary">
             <div
               ref={containerRef}
               // h-[80vh] w-full
-              className="relative h-[680px] w-[1360px] object-cover mx-auto"
+              className="relative p-8  w-full mx-auto"
               id="image-container"
             >
               <motion.div
-                className=" flex w-full  h-full bg-white rounded-lg shadow-lg"
+                className=" flex w-full  bg-white rounded-lg shadow-lg"
                 initial={{ rotateY: 0, zIndex: 0 }}
                 animate={{
                   rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
@@ -255,12 +260,17 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 style={{ transformOrigin: "right center" }}
                 onAnimationComplete={() => setAnimate(false)}
               >
+                {/* Make a parent div relative ref  */}
+                <div  >
                 <img
                   src={images[currentPage].url}
                   alt={`Page ${currentPage + 1}`}
-                  className="w-full cursor-crosshair h-full object-cover rounded-tl-lg rounded-bl-lg"
+                  className="w-full cursor-crosshair h-full object-contain rounded-tl-lg rounded-bl-lg"
                   onClick={(event) => handleImageMarker(event, currentPage)}
                 />
+                </div>
+
+<div>
 
                 <img
                   src={
@@ -269,9 +279,11 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                       : images[currentPage].url
                   }
                   alt={`Page ${currentPage + 2}`}
-                  className="w-full h-full cursor-crosshair object-cover rounded-tr-lg rounded-br-lg"
+                  className="w-full h-full cursor-crosshair object-contain rounded-tr-lg rounded-br-lg"
                   onClick={(event) => handleImageMarker(event, currentPage + 1)}
                 />
+</div>
+
 
                 {markers.map(
                   (marker, index) =>
@@ -288,6 +300,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                           className="absolute flex justify-center items-center text-white text-sm h-6 w-6 rounded-full shadow-lg cursor-pointer animate-pulse"
                           style={{ backgroundColor: marker.color }}
                           onClick={() =>
+                          {
+                            handleMarkerClick(marker)
                             setSettings({
                               ...settings,
                               verticalValue: marker.x,
@@ -295,7 +309,9 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                               heading: marker.product,
                             })
                           }
-                          onDoubleClick={() => handleMarkerClick(marker)}
+                        }
+
+                          // onDoubleClick={() => handleMarkerClick(marker)}
                         >
                           <span className="w-4 h-4 rounded-full bg-white"></span>
                           {/* <button
@@ -317,6 +333,18 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 )}
               </motion.div>
             </div>
+
+            <button onClick={() => shopify.modal.show('my-modal')}>Open Modal</button>
+      <Modal id="my-modal">
+        
+        <TitleBar title="Title">
+          
+          
+          <button variant="primary">Label</button>
+          <button onClick={() => shopify.modal.hide('my-modal')}>Label</button>
+        </TitleBar>
+      </Modal>
+      
             <div className="flex items-center justify-center w-full mt-2">
               <Pagination
                 label="Pagination"
@@ -326,56 +354,37 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 onNext={handleNextPage}
               />
             </div>
-            {(selectedMarker || isShowModal) && selectedMarker !== null && (
-              <div className={`${!isShowModal ? "hidden" : "block"}`}>
-                <Draggable>
-                  <div className="bg-white absolute top-20 left-20 z-20  border-black border p-6 rounded-lg ml-20 w-3/4 max-w-3xl shadow-lg">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-2xl font-semibold text-gray-800">
-                        {settings.heading || "Untitled Product"}
-                      </h2>
-                      <button
-                        onClick={() => setIsSetModal(false)}
-                        className="text-gray-600 hover:text-gray-800 text-xl"
-                      >
-                        &times;
-                      </button>
-                    </div>
+            {selectedMarker && (
+              <div className="w-full border-2 absolute  bg-gray-700 h-screen">
 
-                    {/* Product Image Section */}
-                    <div className="mb-6">
-                      <img
-                        src={
-                          selectedMarker.productImage ||
-                          "/path/to/demo-image.jpg"
-                        } // Fallback image if no product image
-                        alt={selectedMarker.product || "Demo Product"}
-                        className="w-full h-64 object-cover rounded-lg shadow-sm"
-                      />
-                    </div>
-
-                    {/* Product Description Section */}
-                    <div className="mb-6">
-                      <p className="text-gray-600 text-lg flex flex-col gap-2">
-                        <span>x: {selectedMarker.x}</span>
-                        <span>y: {selectedMarker.y}</span>
-                      </p>
-                    </div>
-
-                    {/* Remove Button */}
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleRemoveMarker}
-                        className="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition-colors"
-                      >
-                        Remove Product
-                      </button>
-                    </div>
+              <div className=" absolute top-20  left-2 w-[40%]">
+  
+                  <MediaCard
+                    title="Getting Started"
+                    primaryAction={{
+                      content: 'Learn about getting started',
+                      onAction: () => {},
+                    }}
+                    description="Discover how Shopify can power up your entrepreneurial journey."
+                    popoverActions={[{content: 'Dismiss', onAction: () => {}}]}
+                  >
+                    <img
+                      alt=""
+                      width="100%"
+                      height="100%"
+                      style={{
+                        objectFit: 'cover',
+                        objectPosition: 'center',
+                      }}
+                      src="https://burst.shopifycdn.com/photos/business-woman-smiling-in-office.jpg?width=1850"
+                    />
+                  </MediaCard>
                   </div>
-                </Draggable>
               </div>
+
+
             )}
-          </div>
+          </Card>
 
           {/* <div
             className={`w-[25%] ${settings?.heading === "" ? "opacity-50 pointer-events-none" : "opacity-100"} h-[680px] overflow-y-scroll  rounded-lg  p-4 bg-white`}
@@ -509,7 +518,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
               </div>
             </div>
           </div> */}
-        </div>
+        </Layout>
       </Page>
     </div>
   );
