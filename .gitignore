@@ -13,8 +13,8 @@ database.sqlite
 .env
 .env.*
 
-
-
+shopify.web.toml
+shopify.app.toml
 
 
 /extensions/*/dist
