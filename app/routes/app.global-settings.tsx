@@ -2,7 +2,7 @@ import { Button, ButtonGroup, Page } from "@shopify/polaris";
 import { useCallback, useState } from "react";
 import { buttonsName } from "app/config/config";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
-import { useFetcher, useLoaderData } from "@remix-run/react";
+import { useLoaderData } from "@remix-run/react";
 import { apiVersion, authenticate } from "app/shopify.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {

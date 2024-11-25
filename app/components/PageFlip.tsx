@@ -1,19 +1,25 @@
 import { useState, MouseEvent, useCallback, useRef, useEffect } from "react";
-import { XIcon } from "@shopify/polaris-icons";
+import { DeleteIcon, PlusIcon, XIcon } from "@shopify/polaris-icons";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
 import { useFetcher } from "@remix-run/react";
 import { IMAGES, Marker } from "app/constants/types";
 import {
+  BlockStack,
   Button,
+  ButtonGroup,
   Card,
+  ColorPicker,
   Icon,
+  InlineStack,
   Layout,
   LegacyCard,
+  List,
   MediaCard,
   Page,
   Pagination,
   RangeSlider,
+  Text,
   Thumbnail,
 } from "@shopify/polaris";
 import { useSelector } from "react-redux";
@@ -199,7 +205,11 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
   if (fetcher.state === "loading") {
     shopify.toast.show("Product saved");
   }
-
+  const [color, setColor] = useState({
+    hue: 120,
+    brightness: 1,
+    saturation: 1,
+  });
   const handleRangeSliderChange = useCallback(
     (value: number) =>
       setSettings({
@@ -245,6 +255,7 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
           onAction: handleSave,
           loading: fetcher.state === "submitting",
         }}
+        secondaryActions={<Button variant="secondary"> Settings</Button>}
         fullWidth
       >
         <Layout>
@@ -385,8 +396,11 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
                               </div>
                               <div className="">
                                 <p className="Polaris-Text--root Polaris-Text--bodySm pb-2">
-                                  {selectedMarker.description ||
-                                    "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Harum quos unde, dolore facere incidunt voluptates consectetur veritatis recusandae numquam nesciunt voluptate dolor ratione perferendis nam earum tenetur, asperiores maxime aperiam reprehenderit neque debitis deleniti?"}
+                                  {selectedMarker.description
+                                    .replace(/<p>/g, "")
+                                    .replace(/<\/p>/g, "")
+                                    .replace("<!---->", "") ||
+                                    "Lorem ipsum dolor sit amet consectetur adipisicing elit. Harum quos unde, dolore facere incidunt voluptates consectetur veritatis recusandae numquam nesciunt voluptate dolor ratione perferendis nam earum tenetur, asperiores maxime aperiam reprehenderit neque debitis deleniti?"}
                                 </p>
                                 <div className="pb-2 flex items-center  gap-2">
                                   <p className="line-through">
@@ -422,6 +436,41 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
               </div>
             )}
           </Card>
+          <div className="absolute top-2">
+            <Card roundedAbove="sm">
+              <BlockStack gap="200">
+                <Text as="h2" variant="headingSm">
+                  Hotspot Settings
+                </Text>
+                <BlockStack gap="200">
+                  <Text as="h3" variant="headingSm" fontWeight="medium">
+                    Setting
+                  </Text>
+                  <List>
+                    <ColorPicker onChange={setColor} color={color} />
+                  </List>
+                </BlockStack>
+                <InlineStack align="end">
+                  <ButtonGroup>
+                    <Button
+                      icon={DeleteIcon}
+                      variant="tertiary"
+                      tone="critical"
+                      onClick={() => {}}
+                      accessibilityLabel="Delete"
+                    />
+                    <Button
+                      variant="primary"
+                      onClick={() => {}}
+                      accessibilityLabel="Save setttings"
+                    >
+                      Save setttings
+                    </Button>
+                  </ButtonGroup>
+                </InlineStack>
+              </BlockStack>
+            </Card>
+          </div>
 
           {/* <div
             className={`w-[25%] ${settings?.heading === "" ? "opacity-50 pointer-events-none" : "opacity-100"} h-[680px] overflow-y-scroll  rounded-lg  p-4 bg-white`}
