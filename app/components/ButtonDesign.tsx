@@ -1,55 +1,206 @@
 import React, { useState } from "react";
-import { Button, Modal, TextField, Card, BlockStack } from "@shopify/polaris";
+import {
+  Button,
+  Modal,
+  TextField,
+  Card,
+  BlockStack,
+  FormLayout,
+  hsbToHex,
+  Layout,
+  Popover,
+  Checkbox,
+  ColorPicker,
+  RangeSlider,
+} from "@shopify/polaris";
+import { useFetcher, useLoaderData } from "@remix-run/react";
+import { buttonDesigns, iconItems } from "app/config/config";
+import { HotspotProps, IconItems } from "app/constants/types";
+import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
+import { apiVersion, authenticate } from "app/shopify.server";
 
-// Define the properties for a hotspot button
-interface HotspotProps {
-  id: string;
-  svg: string; // SVG string for the button design
-  color: string; // Color for the button
-  hoverColor: string; // Hover color
-  label: string; // Label for hover effect
-}
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { session } = await authenticate.admin(request);
+  const { accessToken, shop }: any = session;
 
-// Define a set of pre-designed buttons (SVGs)
-const buttonDesigns: HotspotProps[] = [
-  {
-    id: "button-1",
-    svg: '<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg"><circle cx="25" cy="25" r="25" fill="currentColor" /></svg>',
-    color: "#007c68", // Primary Green
-    hoverColor: "#005d4a", // Darker Green on Hover
-    label: "Green Circle",
-  },
-  {
-    id: "button-2",
-    svg: '<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" fill="currentColor" /></svg>',
-    color: "#f0a500", // Orange
-    hoverColor: "#d77c00", // Darker Orange on Hover
-    label: "Orange Square",
-  },
-  {
-    id: "button-3",
-    svg: '<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg"><polygon points="25,0 50,50 0,50" fill="currentColor" /></svg>',
-    color: "#6b42f5", // Purple
-    hoverColor: "#4b2d99", // Darker Purple on Hover
-    label: "Purple Triangle",
-  },
-  {
-    id: "button-4",
-    svg: '<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg"><ellipse cx="25" cy="25" rx="25" ry="25" fill="currentColor" /></svg>',
-    color: "#ff4f00", // Red-Orange
-    hoverColor: "#cc3b00", // Darker Red-Orange on Hover
-    label: "Red Ellipse",
-  },
-  {
-    id: "button-5",
-    svg: '<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg"><rect width="50" height="50" rx="10" ry="10" fill="currentColor" /></svg>',
-    color: "#00bcd4", // Teal
-    hoverColor: "#008c9e", // Darker Teal on Hover
-    label: "Teal Rounded Square",
-  },
-];
+  if (request.method === "POST") {
+    const formData = await request.formData();
+
+    const buttonText = formData.get("buttonText") as string;
+    const icon = formData.get("icon") as string;
+    const fontSize = formData.get("fontSize") as string;
+    const borderRadius = formData.get("borderRadius") as string;
+    const borderWidth = formData.get("borderWidth") as string;
+    const borderColor = formData.get("borderColor") as string;
+    const backgroundColor = formData.get("backgroundColor") as string;
+    const textColor = formData.get("textColor") as string;
+
+    const metafieldData = {
+      namespace: "cartmade",
+      key: "cod_button_settings",
+      value: JSON.stringify({
+        buttonText,
+        icon,
+        fontSize: parseInt(fontSize),
+        borderRadius: parseInt(borderRadius),
+        borderWidth: parseInt(borderWidth),
+        borderColor,
+        backgroundColor,
+        textColor,
+      }),
+      type: "json",
+      owner_resource: "shop",
+    };
+
+    const response = await fetch(
+      `https://${shop}/admin/api/${apiVersion}/metafields.json`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Shopify-Access-Token": accessToken,
+        },
+        body: JSON.stringify({ metafield: metafieldData }),
+      },
+    );
+
+    const responseData = await response.json();
+    console.log(responseData);
+    if (!response.ok) {
+      return json(
+        { error: responseData.errors || "Failed to save metafield" },
+        { status: response.status },
+      );
+    }
+    return json({
+      message: "Public metafield saved successfully",
+      data: responseData,
+    });
+  }
+};
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { admin } = await authenticate.admin(request);
+
+  const GET_BUTTON_SETTINGS_QUERY = `
+  query GetButtonSettings {
+    shop {
+      metafield(namespace: "cartmade", key: "cod_button_settings") {
+        id
+        key
+        value
+        jsonValue
+        type
+        updatedAt
+      }
+    }
+  }
+`;
+
+  try {
+    const data = await admin.graphql(GET_BUTTON_SETTINGS_QUERY);
+    if (!data) return { error: "No data found" };
+    const response = await data.json();
+    if (!response.data) {
+      console.error("GraphQL errors:", "Failed to fetch settings");
+      return { error: "Failed to fetch button settings metafield." };
+    }
+
+    const buttonSettings = response?.data?.shop?.metafield;
+
+    if (!buttonSettings) {
+      console.warn("No button settings metafield found.");
+      return { error: "Button settings metafield not found." };
+    }
+
+    return { buttonSettings };
+  } catch (error) {
+    console.error("Error fetching button settings:", error);
+    return { error: "Unexpected error occurred while fetching metafield." };
+  }
+};
 
 const ButtonDesign = () => {
+  const fetcher = useFetcher();
+  const { buttonSettings: { jsonValue } = {} }: any = useLoaderData() || {};
+  const [buttonText, setButtonText] = useState(
+    jsonValue?.buttonText || "Add to cart",
+  );
+
+  const [icon, setIcon] = useState("");
+  const [iconName, setIconName] = useState<string>("");
+
+  const [fontSize, setFontSize] = useState<number>(jsonValue?.fontSize || 15);
+  const [borderRadius, setBorderRadius] = useState<number>(
+    jsonValue?.borderRadius || 4,
+  );
+  const [borderWidth, setBorderWidth] = useState<number>(
+    jsonValue?.borderWidth || 0,
+  );
+
+  const [borderColor, setBorderColor] = useState({
+    hue: 0,
+    saturation: 0,
+    brightness: 0,
+  });
+  const [backgroundColor, setBackgroundColor] = useState({
+    hue: 240,
+    saturation: 0,
+    brightness: 0,
+  });
+  const [textColor, setTextColor] = useState({
+    hue: 0,
+    brightness: 1,
+    saturation: 0,
+  });
+
+  const handleButtonTextChange = (value: string) => setButtonText(value);
+  const handleIconChange = (icon: string, value: string, name: string) => {
+    value === "x" ? setIcon("") : setIcon(icon);
+    name === "Xicon" ? setIconName("") : setIconName(name);
+    setLabel(value);
+  };
+  const [label, setLabel] = useState("");
+  const [bgPopoverActive, setBgPopoverActive] = useState(false);
+  const [textPopoverActive, setTextPopoverActive] = useState(false);
+  const [borderPopoverActive, setBorderPopoverActive] = useState(false);
+
+  const toggleBgPopoverActive = () => setBgPopoverActive((active) => !active);
+  const toggleTextPopoverActive = () =>
+    setTextPopoverActive((active) => !active);
+  const toggleBorderPopoverActive = () =>
+    setBorderPopoverActive((active) => !active);
+
+  const bgHexColor = hsbToHex(backgroundColor) || jsonValue?.backgroundColor;
+  const textHexColor = hsbToHex(textColor) || jsonValue?.textColor;
+  const borderHexColor = hsbToHex(borderColor) || jsonValue?.borderColor;
+
+  const handleBgColorChange = (newColor: any) => setBackgroundColor(newColor);
+  const handleTextColorChange = (newColor: any) => setTextColor(newColor);
+  const handleBorderColorChange = (newColor: any) => setBorderColor(newColor);
+
+  const handleFontSizeChange = (value: number) => setFontSize(value);
+  const handleBorderRadiusChange = (value: number) => setBorderRadius(value);
+  const handleBorderWidthChange = (value: number) => setBorderWidth(value);
+
+  const handleSubmit = () => {
+    const formData = new FormData();
+    formData.append("buttonText", buttonText);
+    formData.append("icon", iconName);
+    formData.append("fontSize", fontSize.toString());
+    formData.append("borderRadius", borderRadius.toString());
+    formData.append("borderWidth", borderWidth.toString());
+
+    formData.append("borderColor", borderHexColor);
+    formData.append("backgroundColor", bgHexColor);
+    formData.append("textColor", textHexColor);
+    fetcher.submit(formData, { method: "post" });
+  };
+
+  if (fetcher.state === "loading") {
+    shopify.toast.show("Setting saved successfully");
+  }
+
   const [active, setActive] = useState(false);
   const [selectedButton, setSelectedButton] = useState<HotspotProps | null>(
     null,
@@ -71,20 +222,21 @@ const ButtonDesign = () => {
   return (
     <div className="space-y-6 p-8 bg-gray-50 rounded-lg shadow-lg">
       {/* Button Selection Section */}
+      <p>Hotspot settings</p>
       <Card>
         <BlockStack align="center">
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-5">
-            {buttonDesigns.map((button) => (
+            {buttonDesigns?.map((button) => (
               <div
                 key={button.id}
                 onClick={() => handleButtonSelect(button)}
-                className={`cursor-pointer p-4 rounded-lg border-1 w-1/2 border-gray-300 flex items-center justify-center  hover:border-gray-500 transition-all transform hover:scale-110 shadow-lg relative ${
+                className={`cursor-pointer p-4 rounded-lg border-1 w-1/2 border-gray-300 flex items-center justify-center hover:border-gray-500 transition-all transform hover:scale-110 shadow-lg relative ${
                   selectedButton?.id === button.id ? "bg-gray-100" : "bg-white"
                 }`}
               >
                 <div
                   dangerouslySetInnerHTML={{ __html: button.svg }}
-                  className="m-auto "
+                  className="m-auto"
                   style={{
                     width: "50px",
                     height: "50px",
@@ -95,7 +247,7 @@ const ButtonDesign = () => {
               </div>
             ))}
           </div>
-          <div className="mt-2 ">
+          <div className="mt-2">
             <Button variant="primary" onClick={toggleModal}>
               Customize Selected Button
             </Button>
@@ -149,6 +301,205 @@ const ButtonDesign = () => {
           </div>
         </Card>
       )}
+
+      <div className="">
+        <p>Button settings</p>
+
+        <Layout.Section variant={"fullWidth"}>
+          <Card>
+            <FormLayout>
+              <TextField
+                autoComplete="true"
+                label="Button text"
+                value={buttonText}
+                onChange={handleButtonTextChange}
+              />
+
+              <div style={{ marginBottom: "10px" }}>
+                <p>Select an icon:</p>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+                  {iconItems &&
+                    iconItems.length &&
+                    iconItems.map(
+                      ({ label: labelName, icon, name }: IconItems) => (
+                        <Button
+                          key={labelName}
+                          icon={icon}
+                          onClick={() =>
+                            handleIconChange(icon, labelName, name)
+                          }
+                          pressed={labelName === label}
+                        />
+                      ),
+                    )}
+                </div>
+              </div>
+
+              <FormLayout.Group>
+                <div>
+                  <p>Background color</p>
+                  <div className="p-2 border border-black w-14 flex items-center justify-center">
+                    <Popover
+                      active={bgPopoverActive}
+                      activator={
+                        <div
+                          onClick={toggleBgPopoverActive}
+                          className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
+                          style={{
+                            backgroundColor: bgHexColor,
+                          }}
+                        />
+                      }
+                      onClose={toggleBgPopoverActive}
+                      preferredAlignment="center"
+                    >
+                      <div style={{ padding: "1rem" }}>
+                        <ColorPicker
+                          onChange={handleBgColorChange}
+                          color={backgroundColor}
+                          allowAlpha={false}
+                        />
+                      </div>
+                    </Popover>
+                  </div>
+
+                  <p>Text color</p>
+
+                  <div className="p-2 border border-black w-14 flex items-center justify-center">
+                    <Popover
+                      active={textPopoverActive}
+                      activator={
+                        <div
+                          onClick={toggleTextPopoverActive}
+                          className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
+                          style={{
+                            backgroundColor: textHexColor,
+                          }}
+                        />
+                      }
+                      onClose={toggleTextPopoverActive}
+                      preferredAlignment="center"
+                    >
+                      <div style={{ padding: "1rem" }}>
+                        <ColorPicker
+                          onChange={handleTextColorChange}
+                          color={textColor}
+                          allowAlpha={false}
+                        />
+                      </div>
+                    </Popover>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-3">
+                  <RangeSlider
+                    label="Font size"
+                    value={fontSize}
+                    min={15}
+                    max={30}
+                    onChange={handleFontSizeChange}
+                    output
+                  />
+                  <RangeSlider
+                    label="Border radius"
+                    value={borderRadius}
+                    min={1}
+                    max={15}
+                    onChange={handleBorderRadiusChange}
+                    output
+                  />
+                  <RangeSlider
+                    label="Border width"
+                    min={0}
+                    max={15}
+                    value={borderWidth}
+                    onChange={handleBorderWidthChange}
+                    output
+                  />
+
+                  <div>
+                    <p>Border color</p>
+
+                    <div className="p-2 border border-black w-14 flex items-center justify-center">
+                      <Popover
+                        active={borderPopoverActive}
+                        activator={
+                          <div
+                            onClick={toggleBorderPopoverActive}
+                            className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
+                            style={{
+                              backgroundColor: borderHexColor,
+                            }}
+                          />
+                        }
+                        onClose={toggleBorderPopoverActive}
+                        preferredAlignment="center"
+                      >
+                        <div style={{ padding: "1rem" }}>
+                          <ColorPicker
+                            onChange={handleBorderColorChange}
+                            color={borderColor}
+                            allowAlpha={false}
+                          />
+                        </div>
+                      </Popover>
+                    </div>
+                  </div>
+                </div>
+              </FormLayout.Group>
+            </FormLayout>
+          </Card>
+        </Layout.Section>
+
+        <Layout.Section variant="oneHalf">
+          <div
+            style={{
+              marginBottom: "15px",
+              fontSize: "18px",
+              fontWeight: "bold",
+            }}
+          >
+            Live preview:
+          </div>
+          <Card>
+            <div
+              style={{
+                borderWidth,
+                borderColor: borderHexColor,
+                borderRadius,
+                background: borderHexColor,
+              }}
+            >
+              <button
+                className="overflow-hidden Polaris-Button Polaris-Button--pressable Polaris-Button--variantPrimary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter Polaris-Button--fullWidth Polaris-Button--iconWithText  "
+                type="button"
+                style={{
+                  backgroundColor: bgHexColor,
+                  color: textHexColor,
+                  fontWeight: 400,
+                  borderRadius,
+                  borderWidth,
+                  borderColor: borderHexColor,
+                }}
+              >
+                <span className="Polaris-Button__Icon text-black">
+                  <span
+                    className="Polaris-Icon "
+                    // style={{ color: textHexColor }}
+                  >
+                    {icon}
+                  </span>
+                </span>
+                <span
+                  style={{ fontSize }}
+                  className="Polaris-Text--root Polaris-Text--bodySm Polaris-Text--medium flex flex-col"
+                >
+                  {buttonText}
+                </span>
+              </button>
+            </div>
+          </Card>
+        </Layout.Section>
+      </div>
     </div>
   );
 };
