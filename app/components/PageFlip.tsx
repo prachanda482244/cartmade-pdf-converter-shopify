@@ -1,21 +1,26 @@
 import { useState, MouseEvent, useCallback, useRef, useEffect } from "react";
+import { XIcon } from "@shopify/polaris-icons";
 import { motion } from "framer-motion";
 import Draggable from "react-draggable";
 import { useFetcher } from "@remix-run/react";
 import { IMAGES, Marker } from "app/constants/types";
 import {
   Button,
+  Card,
+  Icon,
+  Layout,
   LegacyCard,
+  MediaCard,
   Page,
   Pagination,
   RangeSlider,
+  Thumbnail,
 } from "@shopify/polaris";
 import { useSelector } from "react-redux";
 
-const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
+const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
   const fetcher = useFetcher();
   const plan = useSelector((state: any) => state.plan.plan);
-  console.log(plan, "PLANNING");
 
   const colorPalette = [
     "#FF5733",
@@ -116,6 +121,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       filter: { variants: false, archived: false, draft: false },
     });
 
+    console.log(selected[0], "SELECTRTEd");
     if (selected && selected.length > 0) {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
@@ -123,6 +129,9 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
           x: x,
           y: y,
           imageIndex,
+          comparedPrice: selected[0].variants[0].compareAtPrice,
+          description: selected[0].descriptionHtml,
+          price: selected[0].variants[0].price,
           handle: selected[0].handle,
           product: selected[0].title,
           productId: selected[0].id,
@@ -224,6 +233,8 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
       }),
     [],
   );
+  console.log(shopName);
+  console.log(selectedMarker, "SELECTRE MDSLAFSE:LJ");
 
   return (
     <div className="w-[80%]">
@@ -236,16 +247,16 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
         }}
         fullWidth
       >
-        <div className="flex gap-2">
-          <div className="flex w-full h-full  flex-col bg-gray-100">
+        <Layout>
+          <Card background="bg-surface-secondary">
             <div
               ref={containerRef}
               // h-[80vh] w-full
-              className="relative h-[680px] w-[1360px] object-cover mx-auto"
+              className="relative p-8  w-full mx-auto"
               id="image-container"
             >
               <motion.div
-                className=" flex w-full  h-full bg-white rounded-lg shadow-lg"
+                className=" flex w-full  bg-white rounded-lg shadow-lg"
                 initial={{ rotateY: 0, zIndex: 0 }}
                 animate={{
                   rotateY: animate ? (currentPage % 2 === 0 ? 0 : -180) : 0,
@@ -255,23 +266,30 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 style={{ transformOrigin: "right center" }}
                 onAnimationComplete={() => setAnimate(false)}
               >
-                <img
-                  src={images[currentPage].url}
-                  alt={`Page ${currentPage + 1}`}
-                  className="w-full cursor-crosshair h-full object-cover rounded-tl-lg rounded-bl-lg"
-                  onClick={(event) => handleImageMarker(event, currentPage)}
-                />
+                {/* Make a parent div relative ref  */}
+                <div>
+                  <img
+                    src={images[currentPage].url}
+                    alt={`Page ${currentPage + 1}`}
+                    className="w-full cursor-crosshair h-full object-contain rounded-tl-lg rounded-bl-lg"
+                    onClick={(event) => handleImageMarker(event, currentPage)}
+                  />
+                </div>
 
-                <img
-                  src={
-                    currentPage + 1 < images.length
-                      ? images[currentPage + 1].url
-                      : images[currentPage].url
-                  }
-                  alt={`Page ${currentPage + 2}`}
-                  className="w-full h-full cursor-crosshair object-cover rounded-tr-lg rounded-br-lg"
-                  onClick={(event) => handleImageMarker(event, currentPage + 1)}
-                />
+                <div>
+                  <img
+                    src={
+                      currentPage + 1 < images.length
+                        ? images[currentPage + 1].url
+                        : images[currentPage].url
+                    }
+                    alt={`Page ${currentPage + 2}`}
+                    className="w-full h-full cursor-crosshair object-contain rounded-tr-lg rounded-br-lg"
+                    onClick={(event) =>
+                      handleImageMarker(event, currentPage + 1)
+                    }
+                  />
+                </div>
 
                 {markers.map(
                   (marker, index) =>
@@ -287,15 +305,17 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                         <div
                           className="absolute flex justify-center items-center text-white text-sm h-6 w-6 rounded-full shadow-lg cursor-pointer animate-pulse"
                           style={{ backgroundColor: marker.color }}
-                          onClick={() =>
+                          onClick={() => {
+                            handleMarkerClick(marker);
                             setSettings({
                               ...settings,
                               verticalValue: marker.x,
                               horizonalValue: marker.y,
                               heading: marker.product,
-                            })
-                          }
-                          onDoubleClick={() => handleMarkerClick(marker)}
+                            });
+                          }}
+
+                          // onDoubleClick={() => handleMarkerClick(marker)}
                         >
                           <span className="w-4 h-4 rounded-full bg-white"></span>
                           {/* <button
@@ -317,6 +337,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 )}
               </motion.div>
             </div>
+
             <div className="flex items-center justify-center w-full mt-2">
               <Pagination
                 label="Pagination"
@@ -326,56 +347,81 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
                 onNext={handleNextPage}
               />
             </div>
-            {(selectedMarker || isShowModal) && selectedMarker !== null && (
-              <div className={`${!isShowModal ? "hidden" : "block"}`}>
-                <Draggable>
-                  <div className="bg-white absolute top-20 left-20 z-20  border-black border p-6 rounded-lg ml-20 w-3/4 max-w-3xl shadow-lg">
-                    <div className="flex justify-between items-center mb-4">
-                      <h2 className="text-2xl font-semibold text-gray-800">
-                        {settings.heading || "Untitled Product"}
-                      </h2>
-                      <button
-                        onClick={() => setIsSetModal(false)}
-                        className="text-gray-600 hover:text-gray-800 text-xl"
-                      >
-                        &times;
-                      </button>
-                    </div>
+            {selectedMarker && (
+              <div className="">
+                <div className=" Polaris-Modal-Dialog__Container w-[80%]">
+                  <div className="Polaris-Modal-Dialog__Modal Polaris-Modal-Dialog--sizeFullScreen">
+                    <div className="Polaris-Box">
+                      <div className="Polaris-LegacyCard">
+                        <div className="Polaris-MediaCard">
+                          <div
+                            onClick={() => setSelectedMarker(null)}
+                            className="crossbtn cursor-pointer absolute z-20 right-2 top-2"
+                          >
+                            <Icon source={XIcon} tone="critical" />
+                          </div>
+                          <div className="Polaris-MediaCard__MediaContainer">
+                            <img
+                              alt={selectedMarker.product}
+                              width="100%"
+                              height="100%"
+                              className="h-full object-cover"
+                              src={
+                                selectedMarker.productImage ||
+                                "https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+                              }
+                            />
+                          </div>
+                          <div className="Polaris-MediaCard__InfoContainer p-6 pt-8 border border-l">
+                            <div className="Polaris-Box">
+                              <div className="Polaris-BlockStack">
+                                <div className="Polaris-InlineStack">
+                                  <div>
+                                    <h2 className="Polaris-Text--root Polaris-Text--headingLg pb-2">
+                                      {selectedMarker.product}
+                                    </h2>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="">
+                                <p className="Polaris-Text--root Polaris-Text--bodySm pb-2">
+                                  {selectedMarker.description ||
+                                    "Lorem ipsum dolor sit, amet consectetur adipisicing elit. Harum quos unde, dolore facere incidunt voluptates consectetur veritatis recusandae numquam nesciunt voluptate dolor ratione perferendis nam earum tenetur, asperiores maxime aperiam reprehenderit neque debitis deleniti?"}
+                                </p>
+                                <div className="pb-2 flex items-center  gap-2">
+                                  <p className="line-through">
+                                    {selectedMarker.comparedPrice}
+                                  </p>
+                                  <p className="text-lg font-semibold">
+                                    {selectedMarker.price}
+                                  </p>
+                                </div>
 
-                    {/* Product Image Section */}
-                    <div className="mb-6">
-                      <img
-                        src={
-                          selectedMarker.productImage ||
-                          "/path/to/demo-image.jpg"
-                        } // Fallback image if no product image
-                        alt={selectedMarker.product || "Demo Product"}
-                        className="w-full h-64 object-cover rounded-lg shadow-sm"
-                      />
-                    </div>
-
-                    {/* Product Description Section */}
-                    <div className="mb-6">
-                      <p className="text-gray-600 text-lg flex flex-col gap-2">
-                        <span>x: {selectedMarker.x}</span>
-                        <span>y: {selectedMarker.y}</span>
-                      </p>
-                    </div>
-
-                    {/* Remove Button */}
-                    <div className="flex justify-end">
-                      <button
-                        onClick={handleRemoveMarker}
-                        className="px-6 py-2 bg-red-600 text-white rounded-lg shadow-md hover:bg-red-700 transition-colors"
-                      >
-                        Remove Product
-                      </button>
+                                <div className="flex gap-2 items-center">
+                                  <Button>View Product</Button>
+                                  <Button
+                                    onClick={handleRemoveMarker}
+                                    variant="primary"
+                                    tone="critical"
+                                  >
+                                    Remove product
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </Draggable>
+                </div>
+                <div
+                  className="Polaris-Backdrop"
+                  onClick={() => setSelectedMarker(null)}
+                ></div>
               </div>
             )}
-          </div>
+          </Card>
 
           {/* <div
             className={`w-[25%] ${settings?.heading === "" ? "opacity-50 pointer-events-none" : "opacity-100"} h-[680px] overflow-y-scroll  rounded-lg  p-4 bg-white`}
@@ -509,7 +555,7 @@ const PageFlip = ({ images, metaFieldId, pdfName }: IMAGES) => {
               </div>
             </div>
           </div> */}
-        </div>
+        </Layout>
       </Page>
     </div>
   );

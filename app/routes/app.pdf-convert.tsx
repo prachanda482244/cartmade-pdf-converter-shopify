@@ -1,4 +1,6 @@
 import { ClipboardIcon } from "@shopify/polaris-icons";
+import { ListBulletedIcon } from "@shopify/polaris-icons";
+import { LayoutColumns3Icon } from "@shopify/polaris-icons";
 import {
   LegacyStack,
   Text,
@@ -12,6 +14,7 @@ import {
   Grid,
   Icon,
   Select,
+  Button,
 } from "@shopify/polaris";
 import { useState, useRef, useEffect, useCallback } from "react";
 import {
@@ -479,12 +482,9 @@ const PDFConverter = () => {
   };
 
   const [view, setView] = useState<string>("list");
+  const [buttonListActive, setButtonListActive] = useState<boolean>(false);
+  const [buttonGridActive, setButtonGridActive] = useState<boolean>(false);
 
-  const handleSelectChange = useCallback((value: string) => setView(value), []);
-  const options = [
-    { label: "LIST", value: "list" },
-    { label: "GRID", value: "grid" },
-  ];
   console.log(maxUploads);
   console.log(uploadCount, "UPLOADCOUTN");
   console.log(deleteId, "DELETE ID");
@@ -539,15 +539,25 @@ const PDFConverter = () => {
           </button>
         </TitleBar>
       </Modal>
-      <div className="mb-2  flex items-center justify-end">
-        <p className="w-[10%]">
-          <Select
-            label={`${view.toUpperCase()} VIEW`}
-            options={options}
-            onChange={handleSelectChange}
-            value={view}
-          />
-        </p>
+      <div className=" gap-2 flex items-center justify-end mb-4">
+        <Button
+          icon={LayoutColumns3Icon}
+          pressed={buttonGridActive}
+          onClick={() => {
+            setView("list");
+            setButtonGridActive(true);
+            setButtonListActive(false);
+          }}
+        ></Button>
+        <Button
+          pressed={buttonListActive}
+          icon={ListBulletedIcon}
+          onClick={() => {
+            setView("grid");
+            setButtonListActive(true);
+            setButtonGridActive(false);
+          }}
+        ></Button>
       </div>
       {loader.error && fetcher.state !== "submitting" && !pdfData ? (
         <LegacyCard sectioned>
