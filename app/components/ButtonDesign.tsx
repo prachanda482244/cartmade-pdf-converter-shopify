@@ -24,6 +24,9 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const [fontSize, setFontSize] = useState<number>(jsonValue?.fontSize || 15);
   const [paddingY, setPaddingY] = useState<number>(jsonValue?.paddingY || 0);
   const [paddingX, setPaddingX] = useState<number>(jsonValue?.paddingX || 0);
+  const [hotspotValue, setHotspotValue] = useState<number>(
+    jsonValue?.hotspotValue || 0,
+  );
   const [shadow, setShadow] = useState<number>(jsonValue?.shadow || 0);
   const [borderRadius, setBorderRadius] = useState<number>(
     jsonValue?.borderRadius || 4,
@@ -47,6 +50,12 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
     saturation: 0,
     brightness: 0,
   });
+  const [hotspotColor, setHotspotColor] = useState({
+    hue: 240,
+    saturation: 0,
+    brightness: 0,
+  });
+
   const [textColor, setTextColor] = useState({
     hue: 0,
     brightness: 1,
@@ -56,11 +65,14 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const handleButtonTextChange = (value: string) => setButtonText(value);
 
   const [bgPopoverActive, setBgPopoverActive] = useState(false);
+  const [hotspotPopoverActive, setHotspotPopoverActive] = useState(false);
   const [textPopoverActive, setTextPopoverActive] = useState(false);
   const [shadowPopoverActive, setShadowPopoverActive] = useState(false);
   const [borderPopoverActive, setBorderPopoverActive] = useState(false);
 
   const toggleBgPopoverActive = () => setBgPopoverActive((active) => !active);
+  const toggleHotspotPopoverActive = () =>
+    setHotspotPopoverActive((active) => !active);
   const toggleShadowPopoverActive = () =>
     setShadowPopoverActive((active) => !active);
   const toggleTextPopoverActive = () =>
@@ -71,14 +83,17 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const bgHexColor = hsbToHex(backgroundColor) || jsonValue?.backgroundColor;
   const textHexColor = hsbToHex(textColor) || jsonValue?.textColor;
   const borderHexColor = hsbToHex(borderColor) || jsonValue?.borderColor;
+  const hotspotHexColor = hsbToHex(hotspotColor) || jsonValue?.hotspotColor;
   const shadowHexColor = hsbToHex(shadowColor) || jsonValue?.shadowColor;
 
   const handleBgColorChange = (newColor: any) => setBackgroundColor(newColor);
   const handleTextColorChange = (newColor: any) => setTextColor(newColor);
+  const handleHotspotColorChange = (newColor: any) => setHotspotColor(newColor);
   const handleBorderColorChange = (newColor: any) => setBorderColor(newColor);
   const handleShadowColorChange = (newColor: any) => setShadowColor(newColor);
 
   const handleFontSizeChange = (value: number) => setFontSize(value);
+  const handleHotspotSizeChange = (value: number) => setHotspotValue(value);
   const handlePaddingYChange = (value: number) => setPaddingY(value);
   const handlePaddingXChange = (value: number) => setPaddingX(value);
   const handleShadowChange = (value: number) => setShadow(value);
@@ -107,16 +122,6 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
     shopify.toast.show("Setting saved successfully");
   }
 
-  const [active, setActive] = useState(false);
-
-  const [hotspotColor, setHotspotColor] = useState<string>("");
-
-  const toggleModal = () => setActive(!active);
-
-  const handleSave = () => {
-    toggleModal();
-  };
-
   return (
     <Page
       primaryAction={{
@@ -127,82 +132,94 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
     >
       <div className="space-y-6 p-8 bg-gray-50 rounded-lg shadow-lg">
         <p>Hotspot settings</p>
-        <Card>
-          <BlockStack align="center">
-            <div className="grid grid-cols-2 h-12 gap-6 sm:grid-cols-3 md:grid-cols-5">
-              <div
-                className="image-hotspots--pin absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
-                style={{ backgroundColor: hotspotColor }}
-              >
-                <div className="image-hotspots--pin-button hotspot--pinned active">
-                  <svg
-                    data-name="Component 30 – 2"
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="25"
-                    height="25"
-                    viewBox="0 0 25 25"
-                  >
-                    <g
-                      id="Rectangle_1123"
-                      data-name="Rectangle 1123"
-                      fill="none"
-                      stroke="#F1EFED"
-                      stroke-width="9"
-                      className=""
+        <div className="w-1/2">
+          <Card>
+            <BlockStack align="center">
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="min-w-[128px]">Hotspot color</p>
+                  <div className="p-2 py-1 min-w-[128px] border border-[#ccc]  rounded-lg flex items-center gap-2">
+                    <Popover
+                      active={hotspotPopoverActive}
+                      activator={
+                        <div
+                          onClick={toggleHotspotPopoverActive}
+                          className="w-6 h-6 rounded-full cursor-pointer border border-[#ccc]"
+                          style={{
+                            backgroundColor: hotspotHexColor,
+                          }}
+                        />
+                      }
+                      onClose={toggleHotspotPopoverActive}
+                      preferredAlignment="center"
                     >
-                      <rect
+                      <div style={{ padding: "1rem" }}>
+                        <ColorPicker
+                          onChange={handleHotspotColorChange}
+                          color={hotspotColor}
+                          allowAlpha={false}
+                        />
+                      </div>
+                    </Popover>
+                    <p>{hotspotHexColor}</p>
+                  </div>
+                </div>
+                <RangeSlider
+                  label="Hotspot size"
+                  value={hotspotValue}
+                  min={0}
+                  max={20}
+                  onChange={handleHotspotSizeChange}
+                  output
+                />
+                <div className="grid grid-cols-2 h-12 gap-6 sm:grid-cols-3 md:grid-cols-5">
+                  <div
+                    className="image-hotspots--pin absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                    style={{
+                      backgroundColor: hotspotHexColor,
+                      // height: hotspotValue,
+                      // width: hotspotValue,
+                    }}
+                  >
+                    <div className="image-hotspots--pin-button hotspot--pinned active">
+                      <svg
+                        data-name="Component 30 – 2"
+                        xmlns="http://www.w3.org/2000/svg"
                         width="25"
                         height="25"
-                        rx="12.5"
-                        stroke="none"
-                      ></rect>
-                      <rect
-                        x="4.5"
-                        y="4.5"
-                        width="16"
-                        height="16"
-                        rx="8"
-                        fill="none"
-                      ></rect>
-                    </g>
-                  </svg>
+                        viewBox="0 0 25 25"
+                      >
+                        <g
+                          id="Rectangle_1123"
+                          data-name="Rectangle 1123"
+                          fill="none"
+                          stroke="#F1EFED"
+                          stroke-width="9"
+                          className=""
+                        >
+                          <rect
+                            width="25"
+                            height="25"
+                            rx="12.5"
+                            stroke="none"
+                          ></rect>
+                          <rect
+                            x="4.5"
+                            y="4.5"
+                            width="16"
+                            height="16"
+                            rx="8"
+                            fill="none"
+                          ></rect>
+                        </g>
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="mt-2">
-              <Button variant="primary" onClick={toggleModal}>
-                Customize hotspot Button
-              </Button>
-            </div>
-          </BlockStack>
-        </Card>
-
-        {active && (
-          <Modal
-            open={active}
-            onClose={toggleModal}
-            title="Edit hotspot Design"
-            primaryAction={{
-              content: "Save",
-              onAction: handleSave,
-            }}
-            secondaryActions={[
-              {
-                content: "Cancel",
-                onAction: toggleModal,
-              },
-            ]}
-          >
-            <Modal.Section>
-              <TextField
-                label="Hotspot Color"
-                type="color"
-                value={hotspotColor}
-                onChange={(newColor) => setHotspotColor(newColor)}
-              />
-            </Modal.Section>
-          </Modal>
-        )}
+            </BlockStack>
+          </Card>
+        </div>
 
         {/* Button Preview */}
 
