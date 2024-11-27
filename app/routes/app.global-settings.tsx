@@ -13,23 +13,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
 
     const buttonText = formData.get("buttonText") as string;
-    const icon = formData.get("icon") as string;
     const fontSize = formData.get("fontSize") as string;
     const borderRadius = formData.get("borderRadius") as string;
     const borderWidth = formData.get("borderWidth") as string;
     const borderColor = formData.get("borderColor") as string;
     const backgroundColor = formData.get("backgroundColor") as string;
     const textColor = formData.get("textColor") as string;
-
+    const paddingX = formData.get("paddingX") as string;
+    const paddingY = formData.get("paddingY") as string;
+    const shadow = formData.get("shadow") as string;
+    const shadowColor = formData.get("shadowColor") as string;
     const metafieldData = {
       namespace: "cartmade",
       key: "cod_button_settings",
       value: JSON.stringify({
         buttonText,
-        icon,
         fontSize: parseInt(fontSize),
         borderRadius: parseInt(borderRadius),
         borderWidth: parseInt(borderWidth),
+        paddingX: parseInt(paddingX),
+        paddingY: parseInt(paddingY),
+        shadow: parseInt(shadow),
+        shadowColor,
         borderColor,
         backgroundColor,
         textColor,
