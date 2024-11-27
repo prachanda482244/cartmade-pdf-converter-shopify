@@ -12,6 +12,7 @@ import {
   Checkbox,
   ColorPicker,
   RangeSlider,
+  Page,
 } from "@shopify/polaris";
 import { useFetcher, useLoaderData } from "@remix-run/react";
 import { buttonDesigns, iconItems } from "app/config/config";
@@ -19,110 +20,8 @@ import { HotspotProps, IconItems } from "app/constants/types";
 import { ActionFunctionArgs, json, LoaderFunctionArgs } from "@remix-run/node";
 import { apiVersion, authenticate } from "app/shopify.server";
 
-export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.admin(request);
-  const { accessToken, shop }: any = session;
-
-  if (request.method === "POST") {
-    const formData = await request.formData();
-
-    const buttonText = formData.get("buttonText") as string;
-    const icon = formData.get("icon") as string;
-    const fontSize = formData.get("fontSize") as string;
-    const borderRadius = formData.get("borderRadius") as string;
-    const borderWidth = formData.get("borderWidth") as string;
-    const borderColor = formData.get("borderColor") as string;
-    const backgroundColor = formData.get("backgroundColor") as string;
-    const textColor = formData.get("textColor") as string;
-
-    const metafieldData = {
-      namespace: "cartmade",
-      key: "cod_button_settings",
-      value: JSON.stringify({
-        buttonText,
-        icon,
-        fontSize: parseInt(fontSize),
-        borderRadius: parseInt(borderRadius),
-        borderWidth: parseInt(borderWidth),
-        borderColor,
-        backgroundColor,
-        textColor,
-      }),
-      type: "json",
-      owner_resource: "shop",
-    };
-
-    const response = await fetch(
-      `https://${shop}/admin/api/${apiVersion}/metafields.json`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": accessToken,
-        },
-        body: JSON.stringify({ metafield: metafieldData }),
-      },
-    );
-
-    const responseData = await response.json();
-    console.log(responseData);
-    if (!response.ok) {
-      return json(
-        { error: responseData.errors || "Failed to save metafield" },
-        { status: response.status },
-      );
-    }
-    return json({
-      message: "Public metafield saved successfully",
-      data: responseData,
-    });
-  }
-};
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { admin } = await authenticate.admin(request);
-
-  const GET_BUTTON_SETTINGS_QUERY = `
-  query GetButtonSettings {
-    shop {
-      metafield(namespace: "cartmade", key: "cod_button_settings") {
-        id
-        key
-        value
-        jsonValue
-        type
-        updatedAt
-      }
-    }
-  }
-`;
-
-  try {
-    const data = await admin.graphql(GET_BUTTON_SETTINGS_QUERY);
-    if (!data) return { error: "No data found" };
-    const response = await data.json();
-    if (!response.data) {
-      console.error("GraphQL errors:", "Failed to fetch settings");
-      return { error: "Failed to fetch button settings metafield." };
-    }
-
-    const buttonSettings = response?.data?.shop?.metafield;
-
-    if (!buttonSettings) {
-      console.warn("No button settings metafield found.");
-      return { error: "Button settings metafield not found." };
-    }
-
-    return { buttonSettings };
-  } catch (error) {
-    console.error("Error fetching button settings:", error);
-    return { error: "Unexpected error occurred while fetching metafield." };
-  }
-};
-
-const ButtonDesign = () => {
+const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const fetcher = useFetcher();
-  const { buttonSettings: { jsonValue } = {} }: any = useLoaderData() || {};
   const [buttonText, setButtonText] = useState(
     jsonValue?.buttonText || "Add to cart",
   );
@@ -220,287 +119,297 @@ const ButtonDesign = () => {
   };
 
   return (
-    <div className="space-y-6 p-8 bg-gray-50 rounded-lg shadow-lg">
-      {/* Button Selection Section */}
-      <p>Hotspot settings</p>
-      <Card>
-        <BlockStack align="center">
-          <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-5">
-            {buttonDesigns?.map((button) => (
-              <div
-                key={button.id}
-                onClick={() => handleButtonSelect(button)}
-                className={`cursor-pointer p-4 rounded-lg border-1 w-1/2 border-gray-300 flex items-center justify-center hover:border-gray-500 transition-all transform hover:scale-110 shadow-lg relative ${
-                  selectedButton?.id === button.id ? "bg-gray-100" : "bg-white"
-                }`}
-              >
-                <div
-                  dangerouslySetInnerHTML={{ __html: button.svg }}
-                  className="m-auto"
-                  style={{
-                    width: "50px",
-                    height: "50px",
-                    color: button.color,
-                    transition: "all 0.3s ease",
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-          <div className="mt-2">
-            <Button variant="primary" onClick={toggleModal}>
-              Customize Selected Button
-            </Button>
-          </div>
-        </BlockStack>
-      </Card>
-
-      {selectedButton && (
-        <Modal
-          open={active}
-          onClose={toggleModal}
-          title="Edit Button Design"
-          primaryAction={{
-            content: "Save",
-            onAction: handleSave,
-          }}
-          secondaryActions={[
-            {
-              content: "Cancel",
-              onAction: toggleModal,
-            },
-          ]}
-        >
-          <Modal.Section>
-            <TextField
-              label="Button Color"
-              type="color"
-              value={buttonColor}
-              onChange={(newColor) => setButtonColor(newColor)}
-            />
-          </Modal.Section>
-        </Modal>
-      )}
-
-      {/* Button Preview */}
-      {selectedButton && (
+    <Page
+      primaryAction={{
+        content: "Save",
+        onAction: handleSubmit,
+        loading: fetcher.state === "submitting",
+      }}
+    >
+      <div className="space-y-6 p-8 bg-gray-50 rounded-lg shadow-lg">
+        {/* Button Selection Section */}
+        <p>Hotspot settings</p>
         <Card>
-          <div className="relative p-6 bg-white rounded-lg border border-gray-300 flex justify-center items-center space-y-4 hover:shadow-lg transition-all">
-            <div
-              dangerouslySetInnerHTML={{ __html: selectedButton.svg }}
-              className="m-auto transition-all transform duration-500"
-              style={{
-                width: "80px",
-                height: "80px",
-                color: buttonColor,
-              }}
-            />
-            <div className="mt-2 text-center text-sm text-gray-700 font-semibold">
-              Preview
+          <BlockStack align="center">
+            <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-5">
+              {buttonDesigns?.map((button) => (
+                <div
+                  key={button.id}
+                  onClick={() => handleButtonSelect(button)}
+                  className={`cursor-pointer p-4 rounded-lg border-1 w-1/2 border-gray-300 flex items-center justify-center hover:border-gray-500 transition-all transform hover:scale-110 shadow-lg relative ${
+                    selectedButton?.id === button.id
+                      ? "bg-gray-100"
+                      : "bg-white"
+                  }`}
+                >
+                  <div
+                    dangerouslySetInnerHTML={{ __html: button.svg }}
+                    className="m-auto"
+                    style={{
+                      width: "50px",
+                      height: "50px",
+                      color: button.color,
+                      transition: "all 0.3s ease",
+                    }}
+                  />
+                </div>
+              ))}
             </div>
-          </div>
+            <div className="mt-2">
+              <Button variant="primary" onClick={toggleModal}>
+                Customize Selected Button
+              </Button>
+            </div>
+          </BlockStack>
         </Card>
-      )}
 
-      <div className="">
-        <p>Button settings</p>
-
-        <Layout.Section variant={"fullWidth"}>
-          <Card>
-            <FormLayout>
+        {selectedButton && (
+          <Modal
+            open={active}
+            onClose={toggleModal}
+            title="Edit Button Design"
+            primaryAction={{
+              content: "Save",
+              onAction: handleSave,
+            }}
+            secondaryActions={[
+              {
+                content: "Cancel",
+                onAction: toggleModal,
+              },
+            ]}
+          >
+            <Modal.Section>
               <TextField
-                autoComplete="true"
-                label="Button text"
-                value={buttonText}
-                onChange={handleButtonTextChange}
+                label="Button Color"
+                type="color"
+                value={buttonColor}
+                onChange={(newColor) => setButtonColor(newColor)}
               />
+            </Modal.Section>
+          </Modal>
+        )}
 
-              <div style={{ marginBottom: "10px" }}>
-                <p>Select an icon:</p>
-                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                  {iconItems &&
-                    iconItems.length &&
-                    iconItems.map(
-                      ({ label: labelName, icon, name }: IconItems) => (
-                        <Button
-                          key={labelName}
-                          icon={icon}
-                          onClick={() =>
-                            handleIconChange(icon, labelName, name)
-                          }
-                          pressed={labelName === label}
-                        />
-                      ),
-                    )}
-                </div>
+        {/* Button Preview */}
+        {selectedButton && (
+          <Card>
+            <div className="relative p-6 bg-white rounded-lg border border-gray-300 flex justify-center items-center space-y-4 hover:shadow-lg transition-all">
+              <div
+                dangerouslySetInnerHTML={{ __html: selectedButton.svg }}
+                className="m-auto transition-all transform duration-500"
+                style={{
+                  width: "80px",
+                  height: "80px",
+                  color: buttonColor,
+                }}
+              />
+              <div className="mt-2 text-center text-sm text-gray-700 font-semibold">
+                Preview
               </div>
+            </div>
+          </Card>
+        )}
 
-              <FormLayout.Group>
-                <div>
-                  <p>Background color</p>
-                  <div className="p-2 border border-black w-14 flex items-center justify-center">
-                    <Popover
-                      active={bgPopoverActive}
-                      activator={
-                        <div
-                          onClick={toggleBgPopoverActive}
-                          className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
-                          style={{
-                            backgroundColor: bgHexColor,
-                          }}
-                        />
-                      }
-                      onClose={toggleBgPopoverActive}
-                      preferredAlignment="center"
-                    >
-                      <div style={{ padding: "1rem" }}>
-                        <ColorPicker
-                          onChange={handleBgColorChange}
-                          color={backgroundColor}
-                          allowAlpha={false}
-                        />
-                      </div>
-                    </Popover>
-                  </div>
+        <div className="">
+          <p>Button settings</p>
 
-                  <p>Text color</p>
-
-                  <div className="p-2 border border-black w-14 flex items-center justify-center">
-                    <Popover
-                      active={textPopoverActive}
-                      activator={
-                        <div
-                          onClick={toggleTextPopoverActive}
-                          className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
-                          style={{
-                            backgroundColor: textHexColor,
-                          }}
-                        />
-                      }
-                      onClose={toggleTextPopoverActive}
-                      preferredAlignment="center"
-                    >
-                      <div style={{ padding: "1rem" }}>
-                        <ColorPicker
-                          onChange={handleTextColorChange}
-                          color={textColor}
-                          allowAlpha={false}
-                        />
-                      </div>
-                    </Popover>
+          <Layout.Section variant={"fullWidth"}>
+            <Card>
+              <FormLayout>
+                <TextField
+                  autoComplete="true"
+                  label="Button text"
+                  value={buttonText}
+                  onChange={handleButtonTextChange}
+                />
+                <div style={{ marginBottom: "10px" }}>
+                  <p>Select an icon:</p>
+                  <div
+                    style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}
+                  >
+                    {iconItems &&
+                      iconItems.length &&
+                      iconItems.map(
+                        ({ label: labelName, icon, name }: IconItems) => (
+                          <Button
+                            key={labelName}
+                            icon={icon}
+                            onClick={() =>
+                              handleIconChange(icon, labelName, name)
+                            }
+                            pressed={labelName === label}
+                          />
+                        ),
+                      )}
                   </div>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <RangeSlider
-                    label="Font size"
-                    value={fontSize}
-                    min={15}
-                    max={30}
-                    onChange={handleFontSizeChange}
-                    output
-                  />
-                  <RangeSlider
-                    label="Border radius"
-                    value={borderRadius}
-                    min={1}
-                    max={15}
-                    onChange={handleBorderRadiusChange}
-                    output
-                  />
-                  <RangeSlider
-                    label="Border width"
-                    min={0}
-                    max={15}
-                    value={borderWidth}
-                    onChange={handleBorderWidthChange}
-                    output
-                  />
-
+                <FormLayout.Group>
                   <div>
-                    <p>Border color</p>
-
+                    <p>Background color</p>
                     <div className="p-2 border border-black w-14 flex items-center justify-center">
                       <Popover
-                        active={borderPopoverActive}
+                        active={bgPopoverActive}
                         activator={
                           <div
-                            onClick={toggleBorderPopoverActive}
+                            onClick={toggleBgPopoverActive}
                             className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
                             style={{
-                              backgroundColor: borderHexColor,
+                              backgroundColor: bgHexColor,
                             }}
                           />
                         }
-                        onClose={toggleBorderPopoverActive}
+                        onClose={toggleBgPopoverActive}
                         preferredAlignment="center"
                       >
                         <div style={{ padding: "1rem" }}>
                           <ColorPicker
-                            onChange={handleBorderColorChange}
-                            color={borderColor}
+                            onChange={handleBgColorChange}
+                            color={backgroundColor}
+                            allowAlpha={false}
+                          />
+                        </div>
+                      </Popover>
+                    </div>
+
+                    <p>Text color</p>
+
+                    <div className="p-2 border border-black w-14 flex items-center justify-center">
+                      <Popover
+                        active={textPopoverActive}
+                        activator={
+                          <div
+                            onClick={toggleTextPopoverActive}
+                            className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
+                            style={{
+                              backgroundColor: textHexColor,
+                            }}
+                          />
+                        }
+                        onClose={toggleTextPopoverActive}
+                        preferredAlignment="center"
+                      >
+                        <div style={{ padding: "1rem" }}>
+                          <ColorPicker
+                            onChange={handleTextColorChange}
+                            color={textColor}
                             allowAlpha={false}
                           />
                         </div>
                       </Popover>
                     </div>
                   </div>
-                </div>
-              </FormLayout.Group>
-            </FormLayout>
-          </Card>
-        </Layout.Section>
+                  <div className="flex flex-col gap-3">
+                    <RangeSlider
+                      label="Font size"
+                      value={fontSize}
+                      min={15}
+                      max={30}
+                      onChange={handleFontSizeChange}
+                      output
+                    />
+                    <RangeSlider
+                      label="Border radius"
+                      value={borderRadius}
+                      min={1}
+                      max={15}
+                      onChange={handleBorderRadiusChange}
+                      output
+                    />
+                    <RangeSlider
+                      label="Border width"
+                      min={0}
+                      max={15}
+                      value={borderWidth}
+                      onChange={handleBorderWidthChange}
+                      output
+                    />
 
-        <Layout.Section variant="oneHalf">
-          <div
-            style={{
-              marginBottom: "15px",
-              fontSize: "18px",
-              fontWeight: "bold",
-            }}
-          >
-            Live preview:
-          </div>
-          <Card>
+                    <div>
+                      <p>Border color</p>
+
+                      <div className="p-2 border border-black w-14 flex items-center justify-center">
+                        <Popover
+                          active={borderPopoverActive}
+                          activator={
+                            <div
+                              onClick={toggleBorderPopoverActive}
+                              className="w-12 h-6 rounded-sm cursor-pointer border-1 border-[#ccc]"
+                              style={{
+                                backgroundColor: borderHexColor,
+                              }}
+                            />
+                          }
+                          onClose={toggleBorderPopoverActive}
+                          preferredAlignment="center"
+                        >
+                          <div style={{ padding: "1rem" }}>
+                            <ColorPicker
+                              onChange={handleBorderColorChange}
+                              color={borderColor}
+                              allowAlpha={false}
+                            />
+                          </div>
+                        </Popover>
+                      </div>
+                    </div>
+                  </div>
+                </FormLayout.Group>
+              </FormLayout>
+            </Card>
+          </Layout.Section>
+
+          <Layout.Section variant="oneHalf">
             <div
               style={{
-                borderWidth,
-                borderColor: borderHexColor,
-                borderRadius,
-                background: borderHexColor,
+                marginBottom: "15px",
+                fontSize: "18px",
+                fontWeight: "bold",
               }}
             >
-              <button
-                className="overflow-hidden Polaris-Button Polaris-Button--pressable Polaris-Button--variantPrimary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter Polaris-Button--fullWidth Polaris-Button--iconWithText  "
-                type="button"
+              Live preview:
+            </div>
+            <Card>
+              <div
                 style={{
-                  backgroundColor: bgHexColor,
-                  color: textHexColor,
-                  fontWeight: 400,
-                  borderRadius,
                   borderWidth,
                   borderColor: borderHexColor,
+                  borderRadius,
+                  background: borderHexColor,
                 }}
               >
-                <span className="Polaris-Button__Icon text-black">
-                  <span
-                    className="Polaris-Icon "
-                    // style={{ color: textHexColor }}
-                  >
-                    {icon}
-                  </span>
-                </span>
-                <span
-                  style={{ fontSize }}
-                  className="Polaris-Text--root Polaris-Text--bodySm Polaris-Text--medium flex flex-col"
+                <button
+                  className="overflow-hidden Polaris-Button Polaris-Button--pressable Polaris-Button--variantPrimary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter Polaris-Button--fullWidth Polaris-Button--iconWithText  "
+                  type="button"
+                  style={{
+                    backgroundColor: bgHexColor,
+                    color: textHexColor,
+                    fontWeight: 400,
+                    borderRadius,
+                    borderWidth,
+                    borderColor: borderHexColor,
+                  }}
                 >
-                  {buttonText}
-                </span>
-              </button>
-            </div>
-          </Card>
-        </Layout.Section>
+                  <span className="Polaris-Button__Icon text-black">
+                    <span
+                      className="Polaris-Icon "
+                      // style={{ color: textHexColor }}
+                    >
+                      {icon}
+                    </span>
+                  </span>
+                  <span
+                    style={{ fontSize }}
+                    className="Polaris-Text--root Polaris-Text--bodySm Polaris-Text--medium flex flex-col"
+                  >
+                    {buttonText}
+                  </span>
+                </button>
+              </div>
+            </Card>
+          </Layout.Section>
+        </div>
       </div>
-    </div>
+    </Page>
   );
 };
 
