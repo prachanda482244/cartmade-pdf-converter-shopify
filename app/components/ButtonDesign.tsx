@@ -164,55 +164,60 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                     <p>{hotspotHexColor}</p>
                   </div>
                 </div>
-                <RangeSlider
-                  label="Hotspot size"
-                  value={hotspotValue}
-                  min={0}
-                  max={20}
-                  onChange={handleHotspotSizeChange}
-                  output
-                />
-                <div className="grid grid-cols-2 h-12 gap-6 sm:grid-cols-3 md:grid-cols-5">
-                  <div
-                    className="image-hotspots--pin absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
-                    style={{
-                      backgroundColor: hotspotHexColor,
-                      // height: hotspotValue,
-                      // width: hotspotValue,
-                    }}
-                  >
-                    <div className="image-hotspots--pin-button hotspot--pinned active">
-                      <svg
-                        data-name="Component 30 – 2"
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="25"
-                        height="25"
-                        viewBox="0 0 25 25"
-                      >
-                        <g
-                          id="Rectangle_1123"
-                          data-name="Rectangle 1123"
-                          fill="none"
-                          stroke="#F1EFED"
-                          stroke-width="9"
-                          className=""
+                <div className="flex items-center gap-4 ">
+                  <div className="w-[30%]">
+                    <RangeSlider
+                      label="Hotspot size"
+                      value={hotspotValue}
+                      min={0}
+                      max={20}
+                      onChange={handleHotspotSizeChange}
+                      output
+                    />
+                  </div>
+
+                  <div className="grid   grid-cols-2 h-12 gap-6 sm:grid-cols-3 md:grid-cols-5">
+                    <div
+                      className="image-hotspots--pin mt-3 absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                      style={{
+                        backgroundColor: hotspotHexColor,
+                        // height: hotspotValue,
+                        // width: hotspotValue,
+                      }}
+                    >
+                      <div className="image-hotspots--pin-button hotspot--pinned active">
+                        <svg
+                          data-name="Component 30 – 2"
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="25"
+                          height="25"
+                          viewBox="0 0 25 25"
                         >
-                          <rect
-                            width="25"
-                            height="25"
-                            rx="12.5"
-                            stroke="none"
-                          ></rect>
-                          <rect
-                            x="4.5"
-                            y="4.5"
-                            width="16"
-                            height="16"
-                            rx="8"
+                          <g
+                            id="Rectangle_1123"
+                            data-name="Rectangle 1123"
                             fill="none"
-                          ></rect>
-                        </g>
-                      </svg>
+                            stroke="#F1EFED"
+                            stroke-width="9"
+                            className=""
+                          >
+                            <rect
+                              width="25"
+                              height="25"
+                              rx="12.5"
+                              stroke="none"
+                            ></rect>
+                            <rect
+                              x="4.5"
+                              y="4.5"
+                              width="16"
+                              height="16"
+                              rx="8"
+                              fill="none"
+                            ></rect>
+                          </g>
+                        </svg>
+                      </div>
                     </div>
                   </div>
                 </div>
