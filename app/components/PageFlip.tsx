@@ -20,8 +20,15 @@ import {
   Text,
 } from "@shopify/polaris";
 import { useSelector } from "react-redux";
+import HotspotButton from "./polaris-components/HotspotButton";
 
-const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
+const PageFlip = ({
+  images,
+  metaFieldId,
+  pdfName,
+  shopName,
+  hotspotColor,
+}: IMAGES) => {
   const fetcher = useFetcher();
   const plan = useSelector((state: any) => state.plan.plan);
 
@@ -276,7 +283,9 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
                       >
                         <div
                           className="image-hotspots--pin absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
-                          style={{ backgroundColor: marker.color }}
+                          style={{
+                            backgroundColor: hotspotColor || marker.color,
+                          }}
                           onClick={() => {
                             handleMarkerClick(marker);
                             setSettings({
@@ -289,39 +298,7 @@ const PageFlip = ({ images, metaFieldId, pdfName, shopName }: IMAGES) => {
 
                           // onDoubleClick={() => handleMarkerClick(marker)}
                         >
-                          <div className="image-hotspots--pin-button hotspot--pinned active">
-                            <svg
-                              data-name="Component 30 – 2"
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="25"
-                              height="25"
-                              viewBox="0 0 25 25"
-                            >
-                              <g
-                                id="Rectangle_1123"
-                                data-name="Rectangle 1123"
-                                fill="none"
-                                stroke="#F1EFED"
-                                stroke-width="9"
-                                className=""
-                              >
-                                <rect
-                                  width="25"
-                                  height="25"
-                                  rx="12.5"
-                                  stroke="none"
-                                ></rect>
-                                <rect
-                                  x="4.5"
-                                  y="4.5"
-                                  width="16"
-                                  height="16"
-                                  rx="8"
-                                  fill="none"
-                                ></rect>
-                              </g>
-                            </svg>
-                          </div>
+                          <HotspotButton />
                           {/* <span className="w-4 h-4 rounded-full bg-white"></span> */}
                           {/* <button
                           className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"

@@ -22,6 +22,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const paddingX = formData.get("paddingX") as string;
     const paddingY = formData.get("paddingY") as string;
     const shadow = formData.get("shadow") as string;
+    const hotspotColor = formData.get("hotspotColor") as string;
     const shadowColor = formData.get("shadowColor") as string;
     const metafieldData = {
       namespace: "cartmade",
@@ -36,6 +37,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         shadow: parseInt(shadow),
         shadowColor,
         borderColor,
+        hotspotColor,
         backgroundColor,
         textColor,
       }),

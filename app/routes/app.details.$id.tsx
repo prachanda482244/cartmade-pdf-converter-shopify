@@ -30,11 +30,35 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 `;
 
+  const GET_BUTTON_SETTINGS_QUERY = `
+  query GetButtonSettings {
+    shop {
+      metafield(namespace: "cartmade", key: "cod_button_settings") {
+        id
+        key
+        value
+        jsonValue
+        type
+        updatedAt
+      }
+    }
+  }
+`;
+
   const response = await admin.graphql(META_FIELD_QUERY, {
     variables: {
       id: metafieldId,
     },
   });
+  const data = await admin.graphql(GET_BUTTON_SETTINGS_QUERY);
+  if (!data) return { error: "No data found" };
+  const buttonResponse = await data.json();
+  if (!buttonResponse.data) {
+    console.error("GraphQL errors:", "Failed to fetch settings");
+    return { error: "Failed to fetch button settings metafield." };
+  }
+  const buttonSettings = buttonResponse?.data?.shop?.metafield;
+  const hotspotColor = buttonSettings?.jsonValue?.hotspotColor;
   {
     try {
       const { data } = await response.json();
@@ -47,7 +71,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         pdfName: data.node.jsonValue.pdfName,
         images: data.node.jsonValue.images,
       };
-      return json({ pdfData, shop });
+      return json({ pdfData, shop, hotspotColor });
     } catch (error) {
       console.error("Error fetching PDF metafields:", error);
       return { error: "Unexpected error occurred while fetching metafield." };
@@ -104,6 +128,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 const DetailPage = () => {
   const loaderData: any = useLoaderData();
+  console.log(loaderData, "LOADER DATA");
   const { pdfData }: any = useLoaderData();
   return (
     <div>
@@ -112,6 +137,7 @@ const DetailPage = () => {
         images={pdfData.images}
         metaFieldId={pdfData.id}
         shopName={loaderData.shop}
+        hotspotColor={loaderData.hotspotColor}
       />
     </div>
   );

@@ -13,10 +13,11 @@ import {
   Page,
 } from "@shopify/polaris";
 import { useFetcher } from "@remix-run/react";
-import { buttonDesigns } from "app/config/config";
-import { HotspotProps } from "app/constants/types";
+import CustomPopoverComponent from "./polaris-components/CustomPopoverComponent";
+import HotspotButton from "./polaris-components/HotspotButton";
 
 const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
+  console.log(jsonValue, "JSON");
   const fetcher = useFetcher();
   const [buttonText, setButtonText] = useState(
     jsonValue?.buttonText || "Add to cart",
@@ -25,7 +26,7 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const [paddingY, setPaddingY] = useState<number>(jsonValue?.paddingY || 0);
   const [paddingX, setPaddingX] = useState<number>(jsonValue?.paddingX || 0);
   const [hotspotValue, setHotspotValue] = useState<number>(
-    jsonValue?.hotspotValue || 0,
+    jsonValue?.hotspotColor || 0,
   );
   const [shadow, setShadow] = useState<number>(jsonValue?.shadow || 0);
   const [borderRadius, setBorderRadius] = useState<number>(
@@ -80,7 +81,7 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const toggleBorderPopoverActive = () =>
     setBorderPopoverActive((active) => !active);
 
-  const bgHexColor = hsbToHex(backgroundColor) || jsonValue?.backgroundColor;
+  const bgHexColor = hsbToHex(backgroundColor);
   const textHexColor = hsbToHex(textColor) || jsonValue?.textColor;
   const borderHexColor = hsbToHex(borderColor) || jsonValue?.borderColor;
   const hotspotHexColor = hsbToHex(hotspotColor) || jsonValue?.hotspotColor;
@@ -114,6 +115,7 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
     formData.append("paddingX", paddingX.toString());
     formData.append("shadow", shadow.toString());
     formData.append("shadowColor", shadowHexColor);
+    formData.append("hotspotColor", hotspotHexColor);
 
     fetcher.submit(formData, { method: "post" });
   };
@@ -136,34 +138,15 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
           <Card>
             <BlockStack align="center">
               <div className="flex flex-col gap-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="min-w-[128px]">Hotspot color</p>
-                  <div className="p-2 py-1 min-w-[128px] border border-[#ccc]  rounded-lg flex items-center gap-2">
-                    <Popover
-                      active={hotspotPopoverActive}
-                      activator={
-                        <div
-                          onClick={toggleHotspotPopoverActive}
-                          className="w-6 h-6 rounded-full cursor-pointer border border-[#ccc]"
-                          style={{
-                            backgroundColor: hotspotHexColor,
-                          }}
-                        />
-                      }
-                      onClose={toggleHotspotPopoverActive}
-                      preferredAlignment="center"
-                    >
-                      <div style={{ padding: "1rem" }}>
-                        <ColorPicker
-                          onChange={handleHotspotColorChange}
-                          color={hotspotColor}
-                          allowAlpha={false}
-                        />
-                      </div>
-                    </Popover>
-                    <p>{hotspotHexColor}</p>
-                  </div>
-                </div>
+                <CustomPopoverComponent
+                  label="Hotspot Color"
+                  popoverActive={hotspotPopoverActive}
+                  togglePopoverActive={toggleHotspotPopoverActive}
+                  hexColor={hotspotHexColor || jsonValue?.hotspotColor}
+                  handleColorChange={handleHotspotColorChange}
+                  color={hotspotColor}
+                />
+
                 <div className="flex items-center gap-4 ">
                   <div className="w-[30%]">
                     <RangeSlider
@@ -185,39 +168,7 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                         // width: hotspotValue,
                       }}
                     >
-                      <div className="image-hotspots--pin-button hotspot--pinned active">
-                        <svg
-                          data-name="Component 30 – 2"
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="25"
-                          height="25"
-                          viewBox="0 0 25 25"
-                        >
-                          <g
-                            id="Rectangle_1123"
-                            data-name="Rectangle 1123"
-                            fill="none"
-                            stroke="#F1EFED"
-                            stroke-width="9"
-                            className=""
-                          >
-                            <rect
-                              width="25"
-                              height="25"
-                              rx="12.5"
-                              stroke="none"
-                            ></rect>
-                            <rect
-                              x="4.5"
-                              y="4.5"
-                              width="16"
-                              height="16"
-                              rx="8"
-                              fill="none"
-                            ></rect>
-                          </g>
-                        </svg>
-                      </div>
+                      <HotspotButton />
                     </div>
                   </div>
                 </div>
@@ -241,121 +192,44 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                     onChange={handleButtonTextChange}
                   />
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="min-w-[128px]">Background color</p>
-                  <div className="p-2 py-1 min-w-[128px] border border-[#ccc]  rounded-lg flex items-center gap-2">
-                    <Popover
-                      active={bgPopoverActive}
-                      activator={
-                        <div
-                          onClick={toggleBgPopoverActive}
-                          className="w-6 h-6 rounded-full cursor-pointer border border-[#ccc]"
-                          style={{
-                            backgroundColor: bgHexColor,
-                          }}
-                        />
-                      }
-                      onClose={toggleBgPopoverActive}
-                      preferredAlignment="center"
-                    >
-                      <div style={{ padding: "1rem" }}>
-                        <ColorPicker
-                          onChange={handleBgColorChange}
-                          color={backgroundColor}
-                          allowAlpha={false}
-                        />
-                      </div>
-                    </Popover>
-                    <p>{bgHexColor}</p>
-                  </div>
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="min-w-[128px]">Text color</p>
-                  <div className="p-2 py-1 min-w-[128px] border border-[#ccc]  rounded-lg flex items-center gap-2">
-                    <Popover
-                      active={textPopoverActive}
-                      activator={
-                        <div
-                          onClick={toggleTextPopoverActive}
-                          className="w-6 h-6 rounded-full cursor-pointer border border-[#ccc]"
-                          style={{
-                            backgroundColor: textHexColor,
-                          }}
-                        />
-                      }
-                      onClose={toggleTextPopoverActive}
-                      preferredAlignment="center"
-                    >
-                      <div className="" style={{ padding: "1rem" }}>
-                        <ColorPicker
-                          onChange={handleTextColorChange}
-                          color={textColor}
-                          allowAlpha={false}
-                        />
-                      </div>
-                    </Popover>
-                    <p>{textHexColor}</p>
-                  </div>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="min-w-[128px]">Shadow color</p>
-                  <div className="p-2 py-1 min-w-[128px] border border-[#ccc]  rounded-lg flex items-center gap-2">
-                    <Popover
-                      active={shadowPopoverActive}
-                      activator={
-                        <div
-                          onClick={toggleShadowPopoverActive}
-                          className="w-6 h-6 rounded-full cursor-pointer border border-[#ccc]"
-                          style={{
-                            backgroundColor: shadowHexColor,
-                          }}
-                        />
-                      }
-                      onClose={toggleShadowPopoverActive}
-                      preferredAlignment="center"
-                    >
-                      <div className="" style={{ padding: "1rem" }}>
-                        <ColorPicker
-                          onChange={handleShadowColorChange}
-                          color={shadowColor}
-                          allowAlpha={false}
-                        />
-                      </div>
-                    </Popover>
-                    <p>{shadowHexColor}</p>
-                  </div>
-                </div>
+                {/* Customer component for colors */}
+                <CustomPopoverComponent
+                  label="Background Color"
+                  popoverActive={bgPopoverActive}
+                  togglePopoverActive={toggleBgPopoverActive}
+                  hexColor={bgHexColor || jsonValue?.backgroundColor}
+                  handleColorChange={handleBgColorChange}
+                  color={backgroundColor}
+                />
 
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="min-w-[128px]">Border color</p>
+                <CustomPopoverComponent
+                  label="Text Color"
+                  popoverActive={textPopoverActive}
+                  togglePopoverActive={toggleTextPopoverActive}
+                  hexColor={textHexColor || jsonValue?.textColor}
+                  handleColorChange={handleTextColorChange}
+                  color={textColor}
+                />
 
-                  <div className="p-2 py-1 min-w-[128px] border border-[#ccc] rounded-lg flex items-center gap-2">
-                    <Popover
-                      active={borderPopoverActive}
-                      activator={
-                        <div
-                          onClick={toggleBorderPopoverActive}
-                          className="w-6 h-6 rounded-full cursor-pointer border border-[#ccc]"
-                          style={{
-                            backgroundColor: borderHexColor,
-                          }}
-                        />
-                      }
-                      onClose={toggleBorderPopoverActive}
-                      preferredAlignment="center"
-                    >
-                      <div style={{ padding: "1rem" }}>
-                        <ColorPicker
-                          onChange={handleBorderColorChange}
-                          color={borderColor}
-                          allowAlpha={false}
-                        />
-                      </div>
-                    </Popover>
-                    <p>{borderHexColor}</p>
-                  </div>
-                </div>
+                <CustomPopoverComponent
+                  label="Shadow Color"
+                  popoverActive={shadowPopoverActive}
+                  togglePopoverActive={toggleShadowPopoverActive}
+                  hexColor={shadowHexColor || jsonValue?.shadowColor}
+                  handleColorChange={handleShadowColorChange}
+                  color={shadowColor}
+                />
+
+                <CustomPopoverComponent
+                  label="Border Color"
+                  popoverActive={borderPopoverActive}
+                  togglePopoverActive={toggleBorderPopoverActive}
+                  hexColor={borderHexColor || jsonValue?.borderColor}
+                  handleColorChange={handleBorderColorChange}
+                  color={borderColor}
+                />
+
                 <div className=" flex max-w-[256px] flex-col gap-3">
                   <RangeSlider
                     label="Font size"

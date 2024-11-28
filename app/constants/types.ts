@@ -57,6 +57,7 @@ export interface IMAGES {
   images: ImageData[];
   metaFieldId: string;
   pdfName: string;
+  hotspotColor: string;
 }
 
 export interface buttonsNameTypes {
