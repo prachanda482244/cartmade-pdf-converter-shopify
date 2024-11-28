@@ -52,7 +52,6 @@ const PageFlip = ({
       ),
   );
 
-  console.log(markers);
   const [selectedMarker, setSelectedMarker] = useState<Marker | null>(null);
 
   const handleNextPage = () => {
@@ -77,14 +76,16 @@ const PageFlip = ({
     mobileHorizontalRange: 0,
     mobileVerticalRange: 0,
   });
-  const [isShowModal, setIsSetModal] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const leftImageRef = useRef<HTMLDivElement | null>(null);
+  const rightImageRef = useRef<HTMLDivElement | null>(null);
 
   const handleImageMarker = async (
     event: MouseEvent<HTMLImageElement>,
+    ref: any,
     imageIndex: number,
   ) => {
-    if (!containerRef.current) return;
+    if (!ref.current) return;
 
     let maxMarkers = 0;
     if (plan === "Free") {
@@ -111,31 +112,27 @@ const PageFlip = ({
       shopify.toast.show("You can only add 3 markers per page for your plan.");
       return;
     }
-    const rect = containerRef.current.getBoundingClientRect();
+    const rect = ref.current.getBoundingClientRect();
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-
-    console.log(x);
-    console.log(y);
+    console.log(x, y);
 
     const imageWidth = rect.width;
     const imageHeight = rect.height;
-
+    console.log(imageWidth, imageHeight);
     const xPercentage = (x / imageWidth) * 100;
     const yPercentage = (y / imageHeight) * 100;
-    console.log(xPercentage, "x%");
-    console.log(yPercentage, "y%");
     const selected: any = await shopify.resourcePicker({
       type: "product",
       multiple: 1,
       filter: { variants: false, archived: false, draft: false },
     });
 
-    console.log(selected[0], "SELECTRTEd");
     if (selected && selected.length > 0) {
       setMarkers((prevMarkers) => [
         ...prevMarkers,
         {
+          pointId: Math.floor(Math.random() * 10000) + 1,
           x: x,
           y: y,
           imageIndex,
@@ -154,43 +151,50 @@ const PageFlip = ({
     }
   };
 
-  console.log(markers, "MARKERS");
-
   const handleMarkerClick = (marker: Marker) => {
     setSelectedMarker(marker);
-    setIsSetModal(true);
   };
 
   const handleRemoveMarker = () => {
     if (selectedMarker) {
       setMarkers((prevMarkers) =>
-        prevMarkers.filter((marker) => marker !== selectedMarker),
+        prevMarkers.filter(
+          (marker) => marker.pointId !== selectedMarker.pointId,
+        ),
       );
       setSelectedMarker(null);
     }
   };
 
-  const handleDragStop = (e: MouseEvent, data: any, markerIndex: number) => {
-    const pageWidth = 450;
-    const newMarkers = [...markers];
-    const marker = newMarkers[markerIndex];
+  const handleDragStop = useCallback(
+    (e: MouseEvent, ref: any, markerIndex: number) => {
+      if (!ref.current) return;
 
-    if (marker) {
-      if (data.x < pageWidth && marker.imageIndex % 2 === 1) {
-        marker.imageIndex = marker.imageIndex - 1;
-      } else if (data.x >= pageWidth && marker.imageIndex % 2 === 0) {
-        marker.imageIndex = marker.imageIndex + 1;
-      }
+      const containerRect = ref.current.getBoundingClientRect();
+      const x = e.clientX - containerRect.left;
+      const y = e.clientY - containerRect.top;
 
-      marker.x = data.x;
-      marker.y = data.y;
-      setMarkers(newMarkers);
-      setCurrentPage(
-        marker.imageIndex % 2 === 0 ? marker.imageIndex : marker.imageIndex - 1,
-      );
-    }
-  };
+      const containerWidth = containerRect.width;
+      const containerHeight = containerRect.height;
 
+      const xPercentage = (x / containerWidth) * 100;
+      const yPercentage = (y / containerHeight) * 100;
+
+      console.log(xPercentage, yPercentage, "Percanteage");
+      setMarkers((prevMarkers) => {
+        const newMarkers = [...prevMarkers];
+        const marker = newMarkers[markerIndex];
+        if (marker) {
+          marker.xPercentage = xPercentage;
+          marker.yPercentage = yPercentage;
+        }
+        return newMarkers;
+      });
+    },
+    [markers],
+  );
+
+  console.log(markers, "MAREKRES");
   const handleSave = async () => {
     images.forEach((image) => {
       const imageMarkers = markers.filter(
@@ -209,6 +213,7 @@ const PageFlip = ({
   if (fetcher.state === "loading") {
     shopify.toast.show("Product saved");
   }
+
   const [color, setColor] = useState({
     hue: 120,
     brightness: 1,
@@ -229,12 +234,12 @@ const PageFlip = ({
         <Layout>
           <Card background="bg-surface-secondary">
             <div
-              ref={containerRef}
               // h-[80vh] w-full
               className="relative p-8  w-full mx-auto"
               id="image-container"
             >
               <motion.div
+                ref={containerRef}
                 className=" flex w-full  bg-white rounded-lg shadow-lg"
                 initial={{ rotateY: 0, zIndex: 0 }}
                 animate={{
@@ -245,17 +250,50 @@ const PageFlip = ({
                 style={{ transformOrigin: "right center" }}
                 onAnimationComplete={() => setAnimate(false)}
               >
-                {/* Make a parent div relative ref  */}
-                <div>
+                <div ref={leftImageRef} className="relative">
                   <img
                     src={images[currentPage].url}
                     alt={`Page ${currentPage + 1}`}
-                    className="w-full cursor-crosshair h-full object-contain rounded-tl-lg rounded-bl-lg"
-                    onClick={(event) => handleImageMarker(event, currentPage)}
+                    className="w-full cursor-crosshair h-full object-contain rounded-tl-lg  rounded-bl-lg"
+                    onClick={(event) =>
+                      handleImageMarker(event, leftImageRef, currentPage)
+                    }
                   />
+
+                  {markers.map(
+                    (marker, index) =>
+                      marker.imageIndex === currentPage && (
+                        <Draggable
+                          key={marker.pointId}
+                          onStop={(e: any) =>
+                            handleDragStop(e, leftImageRef, index)
+                          }
+                        >
+                          <div
+                            className="image-hotspots--pin  absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                            style={{
+                              backgroundColor: hotspotColor || marker.color,
+                              top: `${marker.yPercentage}%`,
+                              left: `${marker.xPercentage}%`,
+                            }}
+                            onDoubleClick={() => {
+                              handleMarkerClick(marker);
+                              setSettings({
+                                ...settings,
+                                verticalValue: marker.x,
+                                horizonalValue: marker.y,
+                                heading: marker.product,
+                              });
+                            }}
+                          >
+                            <HotspotButton />
+                          </div>
+                        </Draggable>
+                      ),
+                  )}
                 </div>
 
-                <div>
+                <div ref={rightImageRef} className="relative">
                   <img
                     src={
                       currentPage + 1 < images.length
@@ -263,60 +301,44 @@ const PageFlip = ({
                         : images[currentPage].url
                     }
                     alt={`Page ${currentPage + 2}`}
-                    className="w-full h-full cursor-crosshair object-contain rounded-tr-lg rounded-br-lg"
+                    className="w-full  h-full cursor-crosshair object-contain rounded-tr-lg rounded-br-lg"
                     onClick={(event) =>
-                      handleImageMarker(event, currentPage + 1)
+                      handleImageMarker(event, rightImageRef, currentPage + 1)
                     }
                   />
+
+                  {markers.map(
+                    (marker, index) =>
+                      marker.imageIndex === currentPage + 1 && (
+                        <Draggable
+                          key={marker.pointId}
+                          onStop={(e: any, data) =>
+                            handleDragStop(e, rightImageRef, index)
+                          }
+                        >
+                          <div
+                            className="image-hotspots--pin  absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                            style={{
+                              backgroundColor: hotspotColor || marker.color,
+                              top: `${marker.yPercentage}%`,
+                              left: `${marker.xPercentage}%`,
+                            }}
+                            onDoubleClick={() => {
+                              handleMarkerClick(marker);
+                              setSettings({
+                                ...settings,
+                                verticalValue: marker.x,
+                                horizonalValue: marker.y,
+                                heading: marker.product,
+                              });
+                            }}
+                          >
+                            <HotspotButton />
+                          </div>
+                        </Draggable>
+                      ),
+                  )}
                 </div>
-
-                {markers.map(
-                  (marker, index) =>
-                    (marker.imageIndex === currentPage ||
-                      marker.imageIndex === currentPage + 1) && (
-                      <Draggable
-                        key={index}
-                        defaultPosition={{ x: marker.x, y: marker.y }}
-                        onStop={(e: any, data) =>
-                          handleDragStop(e, data, index)
-                        }
-                      >
-                        <div
-                          className="image-hotspots--pin absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
-                          style={{
-                            backgroundColor: hotspotColor || marker.color,
-                          }}
-                          onClick={() => {
-                            handleMarkerClick(marker);
-                            setSettings({
-                              ...settings,
-                              verticalValue: marker.x,
-                              horizonalValue: marker.y,
-                              heading: marker.product,
-                            });
-                          }}
-
-                          // onDoubleClick={() => handleMarkerClick(marker)}
-                        >
-                          <HotspotButton />
-                          {/* <span className="w-4 h-4 rounded-full bg-white"></span> */}
-                          {/* <button
-                          className="bg-gray-600 hover:bg-gray-700 rounded-full w-4 h-4 flex items-center justify-center"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setMarkers((prevMarkers) =>
-                              prevMarkers.filter((m) => m !== marker),
-                            );
-                          }}
-                        >
-                          <span className="text-xs font-bold text-white">
-                            ×
-                          </span>
-                        </button> */}
-                        </div>
-                      </Draggable>
-                    ),
-                )}
               </motion.div>
             </div>
 
@@ -366,13 +388,13 @@ const PageFlip = ({
                                 </div>
                               </div>
                               <div className="">
-                                <p className="Polaris-Text--root Polaris-Text--bodySm pb-2">
-                                  {selectedMarker.description
-                                    .replace(/<p>/g, "")
-                                    .replace(/<\/p>/g, "")
-                                    .replace("<!---->", "") ||
+                                {/* <p className="Polaris-Text--root Polaris-Text--bodySm pb-2">
+                                  {selectedMarker.description ||
+                                    // ?.replace(/<p>/g, "")
+                                    // ?.replace(/<\/p>/g, "")
+                                    // ?.replace("<!---->", "")
                                     "Lorem ipsum dolor sit amet consectetur adipisicing elit. Harum quos unde, dolore facere incidunt voluptates consectetur veritatis recusandae numquam nesciunt voluptate dolor ratione perferendis nam earum tenetur, asperiores maxime aperiam reprehenderit neque debitis deleniti?"}
-                                </p>
+                                </p> */}
                                 <div className="pb-2 flex items-center  gap-2">
                                   <p className="line-through">
                                     {selectedMarker.comparedPrice}
