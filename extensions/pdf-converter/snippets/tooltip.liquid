@@ -3,14 +3,23 @@
     class="custom-popover hidden  bg-white p-4 border border-gray-200 rounded shadow-lg opacity-100 transition-opacity duration-300 pointer-events-none">
     <div class="relative">
         <span class="cross-btn">
-            <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="#ff0000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M19 5L4.99998 19M5.00001 5L19 19" stroke="#ff0000" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+            <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
+                stroke="#ff0000">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier">
+                    <path d="M19 5L4.99998 19M5.00001 5L19 19" stroke="#ff0000" stroke-width="1.5"
+                        stroke-linecap="round" stroke-linejoin="round"></path>
+                </g>
+            </svg>
         </span>
         <div class="modal-content-wrapper flex gap-4 flex-wrap items-center">
             <div class="modal-content-item">
                 {% if product.featured_image %}
                 <img src="{{ product.featured_image | img_url: 'medium' }}" alt="{{ product.title }}">
                 {% else %}
-                <img src="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png" alt="{{ product.title }}">
+                <img src="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+                    alt="{{ product.title }}">
                 {% endif %}
             </div>
             <div class="modal-content-item">
@@ -18,11 +27,12 @@
                 <h3 class="text-xxl font-semibold text-black">{{ product.title }}</h3>
                 <p class="text-md desc">{{ product.description | truncatewords: 10 }}</p>
                 <p class="text-md modal-price mt-2">${{ product.price | money }}</p>
-            
+
                 <form action="/cart/add" method="post" class="mt-4" id="add-to-cart-form-{{ data_hotspot_index }}">
                     <!-- Variant selection dropdown (if multiple variants) -->
                     {% if product.variants.size > 1 %}
-                    <select name="id" class="variant-select pointer-events-auto cursor-pointer w-full p-2 border rounded mt-2">
+                    <select name="id"
+                        class="variant-select pointer-events-auto cursor-pointer w-full p-2 border rounded mt-2">
                         {% for variant in product.variants %}
                         <option value="{{ variant.id }}">{{ variant.title }}</option>
                         {% endfor %}

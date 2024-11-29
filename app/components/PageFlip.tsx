@@ -323,7 +323,7 @@ const PageFlip = ({
                           }
                         >
                           <div
-                            className="image-hotspots--pin z-20  absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                            className="image-hotspots--pin z-20  absolute flex justify-center items-center  text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
                             style={{
                               backgroundColor: hotspotColor || marker.color,
                               top: `${marker.yPercentage}%`,

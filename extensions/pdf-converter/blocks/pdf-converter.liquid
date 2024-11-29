@@ -3,12 +3,13 @@
 
 {{ 'main.css' | asset_url | stylesheet_tag }}
 {% assign pdfMetafields = shop.metafields.PDF %}
+{% assign buttonHotspot = shop.metafields.cartmade['cod_button_settings'] %}
 {% assign pdfMetafield = pdfMetafields[block.settings.metafield_key] %}
 {% assign pdfData = pdfMetafield.value | parse_json %}
+{% assign buttonData = buttonHotspot.value | parse_json %}
 {% assign array_length = pdfData.images | size %}
 {% assign images = pdfData.images %}
 {% assign points = images.points %}
-
 {% for image in images %}
 {% assign pageIndex = forloop.index | minus: 1 %}
 {% for point in image.points %}
@@ -20,26 +21,27 @@ handle:point.handle %}
 {% endfor %}
 
 {%- style -%}
-  .section-{{ block.id }}-padding {
-    padding-top: {{ block.settings.padding_top | times: 0.75 | round: 0 }}px;
-    padding-bottom: {{ block.settings.padding_bottom | times: 0.75 | round: 0 }}px;
-  }
+.section-{{ block.id }}-padding {
+padding-top: {{ block.settings.padding_top | times: 0.75 | round: 0 }}px;
+padding-bottom: {{ block.settings.padding_bottom | times: 0.75 | round: 0 }}px;
+}
 
-  @media screen and (min-width: 750px) {
-    .section-{{ block.id }}-padding {
-      padding-top: {{ block.settings.padding_top }}px;
-      padding-bottom: {{ block.settings.padding_bottom }}px;
-    }
-  }
+@media screen and (min-width: 750px) {
+.section-{{ block.id }}-padding {
+padding-top: {{ block.settings.padding_top }}px;
+padding-bottom: {{ block.settings.padding_bottom }}px;
+}
+}
 {%- endstyle -%}
 
 <div class="relative">
     <div class="pdf-main-container section-{{ block.id }}-padding relative">
         <div class="pdf-body-wrapper">
             <div class="title-wrapper">
-                <h2 class="inline-richtext h1 scroll-trigger animate--slide-in" data-cascade="" style="--animation-order: 0;">
+                <h2 class="inline-richtext h1 scroll-trigger animate--slide-in" data-cascade=""
+                    style="--animation-order: 0;">
                     {{ pdfData.pdfName }}
-                  </h2>
+                </h2>
             </div>
             <div class="book">
                 <div class="page">
@@ -50,13 +52,20 @@ handle:point.handle %}
                     <div class="back">
                         <img src="{{ pdfData.images[0].url }}" alt="Img 1">
                         {% assign points = pdfData.images[0].points %}
-
                         {% for point in points %}
                         <div data-id="hotspot-0-{{forloop.index}}"
-                            class="custom-hotspot points absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2}}px] ">
-                            <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
-                                <span class="h-4 w-4 rounded-full bg-white"></span>
-                            </p>
+                            class="custom-hotspot bg-[{{buttonData.hotspotColor}}] points absolute z-[999] top-[{{point.yPercentage}}%] left-[{{point.xPercentage }}%] image-hotspots--pin z-20 absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse ">
+
+                            <div className="image-hotspots--pin-button hotspot--pinned active">
+                                <svg data-name="Component 30 – 2" xmlns="http://www.w3.org/2000/svg" width="25"
+                                    height="25" viewBox="0 0 25 25">
+                                    <g id="Rectangle_1123" data-name="Rectangle 1123" fill="none" stroke="#F1EFED"
+                                        stroke-width="9" className="">
+                                        <rect width="25" height="25" rx="12.5" stroke="none"></rect>
+                                        <rect x="4.5" y="4.5" width="16" height="16" rx="8" fill="none"></rect>
+                                    </g>
+                                </svg>
+                            </div>
                         </div>
 
                         {% endfor %}
@@ -80,16 +89,25 @@ handle:point.handle %}
                             {% for point in points %}
 
                             <div data-id="hotspot-{{index}}-{{forloop.index}}"
-                                class="points absolute z-[999] top-[{{point.y | divided_by: 4 | abs}}px] left-[{{point.x |  divided_by: 4 | abs}}px] ">
-                                <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
-                                    <span class="h-4 w-4 rounded-full bg-white"></span>
-                                </p>
+                                class="custom-hotspot bg-[{{buttonData.hotspotColor}}] points absolute z-[999] top-[{{point.yPercentage}}%] left-[{{point.xPercentage }}%] image-hotspots--pin z-20 absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse ">
+
+                                <div className="image-hotspots--pin-button hotspot--pinned active">
+                                    <svg data-name="Component 30 – 2" xmlns="http://www.w3.org/2000/svg" width="25"
+                                        height="25" viewBox="0 0 25 25">
+                                        <g id="Rectangle_1123" data-name="Rectangle 1123" fill="none" stroke="#F1EFED"
+                                            stroke-width="9" className="">
+                                            <rect width="25" height="25" rx="12.5" stroke="none"></rect>
+                                            <rect x="4.5" y="4.5" width="16" height="16" rx="8" fill="none"></rect>
+                                        </g>
+                                    </svg>
+                                </div>
                             </div>
                             {% endfor %}
 
                             {% else %}
 
-                            <img src="https://i.pinimg.com/736x/bd/06/62/bd06625e8321081fd66ad0f333a35615.jpg" alt="Pdf">
+                            <img src="https://i.pinimg.com/736x/bd/06/62/bd06625e8321081fd66ad0f333a35615.jpg"
+                                alt="Pdf">
                             {% endif %}
                     </div>
 
@@ -107,10 +125,18 @@ handle:point.handle %}
 
                         {% for point in points %}
                         <div data-id="hotspot-{{nextIndex}}-{{forloop.index}}"
-                            class="absolute points z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
-                            <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
-                                <span class="h-4 w-4 rounded-full bg-white"></span>
-                            </p>
+                            class="custom-hotspot bg-[{{buttonData.hotspotColor}}] points absolute z-[999] top-[{{point.yPercentage}}%] left-[{{point.xPercentage }}%] image-hotspots--pin z-20 absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse ">
+
+                            <div className="image-hotspots--pin-button hotspot--pinned active">
+                                <svg data-name="Component 30 – 2" xmlns="http://www.w3.org/2000/svg" width="25"
+                                    height="25" viewBox="0 0 25 25">
+                                    <g id="Rectangle_1123" data-name="Rectangle 1123" fill="none" stroke="#F1EFED"
+                                        stroke-width="9" className="">
+                                        <rect width="25" height="25" rx="12.5" stroke="none"></rect>
+                                        <rect x="4.5" y="4.5" width="16" height="16" rx="8" fill="none"></rect>
+                                    </g>
+                                </svg>
+                            </div>
                         </div>
                         {% endfor %}
                     </div>
@@ -123,14 +149,29 @@ handle:point.handle %}
     {% comment %} arrow buttons for book turn {% endcomment %}
     <button class="book-prev-next prev border py-2 px-4 rounded-sm shadow-lg bg-white text-black">
         <div class="flex items-center gap-1">
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M10.5303 5.46967C10.8232 5.76256 10.8232 6.23744 10.5303 6.53033L5.81066 11.25H20C20.4142 11.25 20.75 11.5858 20.75 12C20.75 12.4142 20.4142 12.75 20 12.75H5.81066L10.5303 17.4697C10.8232 17.7626 10.8232 18.2374 10.5303 18.5303C10.2374 18.8232 9.76256 18.8232 9.46967 18.5303L3.46967 12.5303C3.17678 12.2374 3.17678 11.7626 3.46967 11.4697L9.46967 5.46967C9.76256 5.17678 10.2374 5.17678 10.5303 5.46967Z" fill="#1C274C"></path> </g></svg> 
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier">
+                    <path fill-rule="evenodd" clip-rule="evenodd"
+                        d="M10.5303 5.46967C10.8232 5.76256 10.8232 6.23744 10.5303 6.53033L5.81066 11.25H20C20.4142 11.25 20.75 11.5858 20.75 12C20.75 12.4142 20.4142 12.75 20 12.75H5.81066L10.5303 17.4697C10.8232 17.7626 10.8232 18.2374 10.5303 18.5303C10.2374 18.8232 9.76256 18.8232 9.46967 18.5303L3.46967 12.5303C3.17678 12.2374 3.17678 11.7626 3.46967 11.4697L9.46967 5.46967C9.76256 5.17678 10.2374 5.17678 10.5303 5.46967Z"
+                        fill="#1C274C"></path>
+                </g>
+            </svg>
             <span>prev</span>
         </div>
     </button>
     <button class="book-prev-next next border py-2 px-4 rounded-sm shadow-lg bg-white text-black">
         <div class="flex items-center gap-1">
             <span>next</span>
-            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <g id="SVGRepo_bgCarrier" stroke-width="0"></g>
+                <g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g>
+                <g id="SVGRepo_iconCarrier">
+                    <path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round"></path>
+                </g>
+            </svg>
         </div>
     </button>
 </div>
@@ -151,29 +192,29 @@ handle:point.handle %}
 "default": "PDF KEY"
 },
 {
-    "type": "header",
-    "content": "Section padding"
-  },
-    {
-      "type": "range",
-      "id": "padding_top",
-      "min": 0,
-      "max": 200,
-      "step": 4,
-      "unit": "px",
-      "label": "padding top",
-      "default": 36
-    },
-    {
-      "type": "range",
-      "id": "padding_bottom",
-      "min": 0,
-      "max": 100,
-      "step": 4,
-      "unit": "px",
-      "label": "padding bottom",
-      "default": 36
-    }
+"type": "header",
+"content": "Section padding"
+},
+{
+"type": "range",
+"id": "padding_top",
+"min": 0,
+"max": 200,
+"step": 4,
+"unit": "px",
+"label": "padding top",
+"default": 36
+},
+{
+"type": "range",
+"id": "padding_bottom",
+"min": 0,
+"max": 100,
+"step": 4,
+"unit": "px",
+"label": "padding bottom",
+"default": 36
+}
 ]
 }
 {% endschema %}

@@ -46,7 +46,7 @@ const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
   const [backgroundColor, setBackgroundColor] = useState({
     hue: 0,
     saturation: 0,
-    brightness: 100,
+    brightness: 0,
   });
   const [fontColor, setFontColor] = useState({
     hue: 0,

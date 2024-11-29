@@ -148,7 +148,6 @@
   color: hsl(200 30% 98%);
 }
 
-
 .book-prev-next svg {
   width: 24px;
   height: 24px;
@@ -191,10 +190,10 @@
 }
 
 @media (min-width: 750px) {
-  .modal-content-wrapper .modal-content-item{
+  .modal-content-wrapper .modal-content-item {
     width: calc(60% - 1rem / 2);
   }
-  .modal-content-wrapper .modal-content-item:first-child{
+  .modal-content-wrapper .modal-content-item:first-child {
     width: calc(40% - 1rem / 2);
   }
 }
@@ -215,10 +214,10 @@
 .custom-popover select {
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg width='14' height='8' viewBox='0 0 14 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M7 7.99994C6.8684 8.0007 6.73793 7.97548 6.6161 7.92571C6.49426 7.87595 6.38344 7.80262 6.29 7.70994L0.290002 1.70994C0.101699 1.52164 -0.00408936 1.26624 -0.00408936 0.999941C-0.00408936 0.73364 0.101699 0.478245 0.290002 0.289941C0.478306 0.101638 0.733701 -0.00415039 1 -0.00415039C1.2663 -0.00415039 1.5217 0.101638 1.71 0.289941L7 5.58994L12.29 0.299942C12.4813 0.136115 12.7274 0.0505086 12.9791 0.0602298C13.2307 0.0699509 13.4695 0.174284 13.6476 0.352378C13.8257 0.530473 13.93 0.769212 13.9397 1.02089C13.9494 1.27256 13.8638 1.51864 13.7 1.70994L7.7 7.70994C7.51374 7.89469 7.26234 7.99884 7 7.99994Z' fill='%23303030'/%3E%3C/svg%3E%0A");
-    background-repeat: no-repeat;
-    background-position: calc(100% - 1rem);
-    background-size: 12px;
-    margin: 0;
+  background-repeat: no-repeat;
+  background-position: calc(100% - 1rem);
+  background-size: 12px;
+  margin: 0;
 }
 .custom-popover select:focus-visible {
   box-shadow: none;
@@ -240,3 +239,63 @@
 
 /* ************ breakpoints ************ */
 /*  */
+.image-hotspots--pin {
+  display: block;
+  transform: translate(-50%, -50%) !important;
+}
+
+.image-hotspots--pin-button.hotspot--pinned {
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 0 6px #00000014;
+}
+.image-hotspots--pin-button.hotspot--pinned svg {
+  display: block !important;
+  transform-origin: center !important;
+  border: 2px #fff solid !important;
+  border-radius: 50% !important;
+  padding: 1px !important;
+  outline: 1px #fff solid !important;
+  outline-offset: 1px !important;
+  transition: all 0.25s cubic-bezier(0.104, 0.204, 0.492, 1);
+}
+.image-hotspots--pin-button.hotspot--pinned:after {
+  content: "";
+  display: block;
+  width: 36px;
+  height: 36px;
+  background: #f5f5f5;
+  border-radius: 50%;
+  opacity: 0.4;
+  animation: hotspot-wave 2s ease infinite alternate;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: -1;
+}
+
+@keyframes hotspot-wave {
+  0% {
+    transform: scale(1);
+  }
+  100% {
+    transform: scale(1.45);
+  }
+}
+
+/* button settings */
+.button-settings-item {
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .button-settings-item {
+    width: calc(50% - 16px / 2);
+    height: 100%;
+  }
+}
