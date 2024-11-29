@@ -327,7 +327,6 @@ const PDFConverter = () => {
 
   const dispatch = useDispatch();
   const plan = useSelector((state: any) => state.plan.plan);
-  console.log(loader, "LOADER");
   useEffect(() => {
     dispatch(addPlan(loader.pricePlan && loader?.pricePlan?.name));
   }, [loader.pricePlan && loader?.pricePlan.name]);
@@ -336,7 +335,6 @@ const PDFConverter = () => {
 
   const maxUploads =
     planType === "Free" ? 1 : planType === "Basic" ? 5 : Infinity;
-  console.log(planType, "PRICEPLAn");
   const [deleteId, setDeleteId] = useState<any>();
 
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
@@ -425,6 +423,7 @@ const PDFConverter = () => {
       selectedResources: [],
       resourceIDResolver: (resource) => resource.id,
     });
+  console.log(deleteId, "Delete id");
   console.log(selectedResources, "SELECTED REou");
   const rowMarkup =
     pdfData?.length &&
@@ -432,7 +431,7 @@ const PDFConverter = () => {
       <IndexTable.Row
         id={id}
         key={id}
-        selected={id === deleteId}
+        selected={selectedResources.includes(id) && deleteId === id}
         position={index}
       >
         <IndexTable.Cell>
@@ -441,6 +440,8 @@ const PDFConverter = () => {
               onClick={() => setDeleteId(id)}
               className="flex items-center text-xs font-normal text-gray-700 font- gap-2"
             >
+              {id}
+              {selectedResources}
               <Thumbnail alt={pdfName} source={frontPage} size="small" />
               <span
                 onClick={() => navigate(`/app/details/${id}`)}
@@ -451,7 +452,7 @@ const PDFConverter = () => {
             </div>
           </Text>
         </IndexTable.Cell>
-        <IndexTable.Cell>Jul 20 at 3:46pm</IndexTable.Cell>
+        <IndexTable.Cell>{deleteId} Jul 20 at 3:46pm</IndexTable.Cell>
         <IndexTable.Cell>600.65 KB</IndexTable.Cell>
         <IndexTable.Cell>
           <p
@@ -485,9 +486,6 @@ const PDFConverter = () => {
   const [buttonListActive, setButtonListActive] = useState<boolean>(false);
   const [buttonGridActive, setButtonGridActive] = useState<boolean>(false);
 
-  console.log(maxUploads);
-  console.log(uploadCount, "UPLOADCOUTN");
-  console.log(deleteId, "DELETE ID");
   return (
     <Page
       backAction={{ content: "Settings", url: "/app" }}
@@ -584,8 +582,7 @@ const PDFConverter = () => {
               resourceName={resourceName}
               itemCount={pdfData?.length || 0}
               selectedItemsCount={
-                1
-                // allResourcesSelected ? "All" : selectedResources?.length
+                allResourcesSelected ? "All" : selectedResources?.length
               }
               promotedBulkActions={promotedBulkActions}
               onSelectionChange={handleSelectionChange}

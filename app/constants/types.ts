@@ -24,6 +24,7 @@ export interface PDFVALUES {
 }
 
 export interface Marker {
+  pointId: number;
   x: number;
   y: number;
   imageIndex: number;
