@@ -4,15 +4,12 @@
 
 /* FlipBook */
 
-.body {
+.pdf-body-wrapper {
   /* or any other parent wrapper */
   margin: 0;
   display: flex;
   min-height: 100dvh;
   perspective: 1000px;
-  font:
-    1em/1.4 "Poppins",
-    sans-serif;
   overflow: hidden;
   color: hsl(180 68% 5%);
   background-image: radial-gradient(
@@ -20,22 +17,23 @@
     hsl(187 20% 88%) 30%,
     hsl(149 20% 94%) 100%
   );
+  border-radius: 8px;
 }
 
-.book {
+.pdf-main-container .book {
   position: relative;
   display: flex;
   margin: auto;
-  width: 40cqmin;
+  width: 60cqmin;
   /*1* let pointer event go trough pages of lower Z than .book */
-  pointer-events: none;
+  /* pointer-events: none; */
   transform-style: preserve-3d;
   transition: translate 1s;
   translate: calc(min(var(--c), 1) * 50%) 0%;
   /* Incline on the X axis for pages preview */
 }
 
-.page {
+.pdf-main-container .page {
   /* PS: Don't go below thickness 0.5 or the pages might transpare */
   --thickness: 4;
   flex: none;
@@ -58,8 +56,8 @@
   rotate: 0 1 0 calc(clamp(0, var(--c) - var(--i), 1) * -180deg);
 }
 
-.front,
-.back {
+.pdf-main-container .front,
+.pdf-main-container .back {
   position: relative;
   flex: none;
   width: 100%;
@@ -70,26 +68,26 @@
   translate: 0px;
 }
 
-.back {
+.pdf-main-container .back {
   translate: -100% 0;
   rotate: 0 1 0 180deg;
 }
 
 /* That's it. Your FlipBook customization styles: */
 
-.book {
+.pdf-main-container .book {
   counter-reset: page -1;
   & a {
     color: inherit;
   }
 }
 
-.page {
+.pdf-main-container .page {
   box-shadow: 0em 0.5em 1em -0.2em #00000020;
 }
 
-.front,
-.back {
+.pdf-main-container .front,
+.pdf-main-container .back {
   display: flex;
   flex-flow: column wrap;
   justify-content: space-between;
@@ -119,11 +117,10 @@
     content: "";
   }
 }
-.front {
+.pdf-main-container .front {
   &::after {
     right: 1em;
   }
-  background: linear-gradient(to left, #f7f7f7 80%, #eee 100%);
   border-radius: 0.1em 0.5em 0.5em 0.1em;
 }
 .back {
@@ -143,4 +140,24 @@
     ),
     hsl(231, 32%, 29%) url("https://picsum.photos/id/984/800/900") 50% / cover;
   color: hsl(200 30% 98%);
+}
+
+
+.pdf-main-container svg {
+  width: 24px;
+  height: 24px;
+}
+
+.book-prev-next {
+  position: absolute;
+  top: 50%;
+  transform: translateX(-50%);
+}
+
+.book-prev-next.prev {
+  left: 0;
+}
+
+.book-prev-next.next {
+  right: 0;
 }
