@@ -32,94 +32,100 @@ handle:point.handle %}
     }
   }
 {%- endstyle -%}
+<div class="relative">
+    <div class="pdf-main-container section-{{ block.id }}-padding ">
+        <div class="pdf-body-wrapper">
+            <div class="book">
+                <div class="page">
 
-<div class="pdf-main-container section-{{ block.id }}-padding ">
-    <div class="pdf-body-wrapper">
-        <div class="book">
-            <div class="page">
-
-                <div class="front cover">
-                    {{ pdfData.pdfName }}
-                </div>
-                <div class="back">
-                    <img src="{{ pdfData.images[0].url }}" alt="Img 1">
-                    {% assign points = pdfData.images[0].points %}
-
-                    {% for point in points %}
-                    <div data-id="hotspot-0-{{forloop.index}}"
-                        class="custom-hotspot points absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2}}px] ">
-                        <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
-                            <span class="h-4 w-4 rounded-full bg-white"></span>
-                        </p>
+                    <div class="front cover">
+                        {{ pdfData.pdfName }}
                     </div>
-
-                    {% endfor %}
-                </div>
-
-
-            </div>
-
-            {% assign index = 1 %}
-
-            {% for x in (1..array_length) %}
-
-            {% assign nextIndex = index | plus: 1 %}
-
-            <div class="page">
-
-                <div class="front relative">
-                    {% if index < array_length %} <img src="{{ pdfData.images[index].url }}" alt="Img {{ index }}">
-                        {% assign points = pdfData.images[index].points %}
+                    <div class="back">
+                        <img src="{{ pdfData.images[0].url }}" alt="Img 1">
+                        {% assign points = pdfData.images[0].points %}
 
                         {% for point in points %}
+                        <div data-id="hotspot-0-{{forloop.index}}"
+                            class="custom-hotspot points absolute z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2}}px] ">
+                            <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
+                                <span class="h-4 w-4 rounded-full bg-white"></span>
+                            </p>
+                        </div>
 
-                        <div data-id="hotspot-{{index}}-{{forloop.index}}"
-                            class="points absolute z-[999] top-[{{point.y | divided_by: 4 | abs}}px] left-[{{point.x |  divided_by: 4 | abs}}px] ">
+                        {% endfor %}
+                    </div>
+
+
+                </div>
+
+                {% assign index = 1 %}
+
+                {% for x in (1..array_length) %}
+
+                {% assign nextIndex = index | plus: 1 %}
+
+                <div class="page">
+
+                    <div class="front relative">
+                        {% if index < array_length %} <img src="{{ pdfData.images[index].url }}" alt="Img {{ index }}">
+                            {% assign points = pdfData.images[index].points %}
+
+                            {% for point in points %}
+
+                            <div data-id="hotspot-{{index}}-{{forloop.index}}"
+                                class="points absolute z-[999] top-[{{point.y | divided_by: 4 | abs}}px] left-[{{point.x |  divided_by: 4 | abs}}px] ">
+                                <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
+                                    <span class="h-4 w-4 rounded-full bg-white"></span>
+                                </p>
+                            </div>
+                            {% endfor %}
+
+                            {% else %}
+
+                            <img src="https://i.pinimg.com/736x/bd/06/62/bd06625e8321081fd66ad0f333a35615.jpg" alt="Pdf">
+                            {% endif %}
+                    </div>
+
+                    {% if nextIndex >= array_length %}
+
+                    <div class="back cover">
+                        <p>Back COver</p>
+                    </div>
+                    {% break %}
+                    {% endif %}
+
+                    <div class="back">
+                        <img src="{{ pdfData.images[nextIndex].url }}" alt="Img {{ index }}">
+                        {% assign points = pdfData.images[nextIndex].points %}
+
+                        {% for point in points %}
+                        <div data-id="hotspot-{{nextIndex}}-{{forloop.index}}"
+                            class="absolute points z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
                             <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
                                 <span class="h-4 w-4 rounded-full bg-white"></span>
                             </p>
                         </div>
                         {% endfor %}
-
-                        {% else %}
-
-                        <img src="https://i.pinimg.com/736x/bd/06/62/bd06625e8321081fd66ad0f333a35615.jpg" alt="Pdf">
-                        {% endif %}
-                </div>
-
-                {% if nextIndex >= array_length %}
-
-                <div class="back cover">
-                    <p>Back COver</p>
-                </div>
-                {% break %}
-                {% endif %}
-
-                <div class="back">
-                    <img src="{{ pdfData.images[nextIndex].url }}" alt="Img {{ index }}">
-                    {% assign points = pdfData.images[nextIndex].points %}
-
-                    {% for point in points %}
-                    <div data-id="hotspot-{{nextIndex}}-{{forloop.index}}"
-                        class="absolute points z-[999] top-[{{point.y | divided_by: 2 | abs}}px] left-[{{point.x |  divided_by: 2 | abs}}px] ">
-                        <p class="h-7 w-7 bg-[{{point.color}}] rounded-full flex items-center justify-center">
-                            <span class="h-4 w-4 rounded-full bg-white"></span>
-                        </p>
                     </div>
-                    {% endfor %}
                 </div>
+                {% assign index = nextIndex | plus:1 %}
+                {% endfor %}
             </div>
-            {% assign index = nextIndex | plus:1 %}
-            {% endfor %}
         </div>
     </div>
-
     {% comment %} arrow buttons for book turn {% endcomment %}
     <button class="book-prev-next prev border py-2 px-4 rounded-sm shadow-lg bg-black text-white">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M10.5303 5.46967C10.8232 5.76256 10.8232 6.23744 10.5303 6.53033L5.81066 11.25H20C20.4142 11.25 20.75 11.5858 20.75 12C20.75 12.4142 20.4142 12.75 20 12.75H5.81066L10.5303 17.4697C10.8232 17.7626 10.8232 18.2374 10.5303 18.5303C10.2374 18.8232 9.76256 18.8232 9.46967 18.5303L3.46967 12.5303C3.17678 12.2374 3.17678 11.7626 3.46967 11.4697L9.46967 5.46967C9.76256 5.17678 10.2374 5.17678 10.5303 5.46967Z" fill="#1C274C"></path> </g></svg> 
+        <div class="flex items-center gap-1">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M10.5303 5.46967C10.8232 5.76256 10.8232 6.23744 10.5303 6.53033L5.81066 11.25H20C20.4142 11.25 20.75 11.5858 20.75 12C20.75 12.4142 20.4142 12.75 20 12.75H5.81066L10.5303 17.4697C10.8232 17.7626 10.8232 18.2374 10.5303 18.5303C10.2374 18.8232 9.76256 18.8232 9.46967 18.5303L3.46967 12.5303C3.17678 12.2374 3.17678 11.7626 3.46967 11.4697L9.46967 5.46967C9.76256 5.17678 10.2374 5.17678 10.5303 5.46967Z" fill="#1C274C"></path> </g></svg> 
+            <span>prev</span>
+        </div>
     </button>
     <button class="book-prev-next next border py-2 px-4 rounded-sm shadow-lg bg-transparent text-black">
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+        <div class="flex items-center gap-1">
+            <span>next</span>
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M4 12H20M20 12L14 6M20 12L14 18" stroke="#1C274C" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path> </g></svg>
+        </div>
     </button>
 </div>
 
