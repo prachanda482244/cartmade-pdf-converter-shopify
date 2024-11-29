@@ -61,6 +61,10 @@ const flipBook = (elBook) => {
         const targetPopover = document.querySelector(
           `div[data-hotspot-id="${hotspotId}"]`,
         );
+        const crossBtn = targetPopover.querySelector(".cross-btn");
+        crossBtn.addEventListener("click", () => {
+          targetPopover.classList.add("hidden");
+        });
         if (targetPopover) {
           targetPopover.classList.toggle("hidden");
         } else {
