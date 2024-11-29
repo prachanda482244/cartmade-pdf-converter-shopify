@@ -157,7 +157,7 @@
 .book-prev-next {
   position: absolute;
   top: 50%;
-  transform: translateX(-50%);
+  transform: translateY(-50%);
   background: transparent;
   box-shadow: none;
   border: 0;
@@ -225,3 +225,18 @@
   outline: 0;
 }
 
+
+/* ************ breakpoints ************ */
+@media (max-width: 1024px) {
+  .pdf-body-wrapper {
+    padding: 3rem;
+    min-height: 100%;
+  }
+  .pdf-main-container .book {
+    width: 52%;
+    margin: 0 auto;
+  }
+}
+
+/* ************ breakpoints ************ */
+/*  */
