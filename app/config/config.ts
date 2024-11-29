@@ -13,6 +13,7 @@ import {
 import AnimationTypes from "app/components/AnimationTypes";
 import AppSettings from "app/components/AppSettings";
 import ButtonDesign from "app/components/ButtonDesign";
+import ToolTipSettings from "app/components/ToolTipSettings";
 
 export const buttonsName: buttonsNameTypes[] = [
   { index: 1, link: "app", name: "App", component: AppSettings },
@@ -24,6 +25,12 @@ export const buttonsName: buttonsNameTypes[] = [
   },
   {
     index: 3,
+    link: "tooltipDesign",
+    name: "Tooltip Design",
+    component: ToolTipSettings,
+  },
+  {
+    index: 4,
     link: "animationTypes",
     name: "Animation Types",
     component: AnimationTypes,
