@@ -24,7 +24,9 @@ body {
 /* hotspots css */
 .image-hotspots--pin {
   display: block;
+  transform: translate(-50%, -50%) !important;
 }
+
 .image-hotspots--pin-button.hotspot--pinned {
   width: 36px;
   height: 36px;

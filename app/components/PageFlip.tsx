@@ -21,6 +21,7 @@ import {
 } from "@shopify/polaris";
 import { useSelector } from "react-redux";
 import HotspotButton from "./polaris-components/HotspotButton";
+import HTMLFlipBook from "react-pageflip";
 
 const PageFlip = ({
   images,
@@ -31,7 +32,6 @@ const PageFlip = ({
 }: IMAGES) => {
   const fetcher = useFetcher();
   const plan = useSelector((state: any) => state.plan.plan);
-
   const colorPalette = [
     "#FF5733",
     "#FF8D1A",
@@ -113,15 +113,17 @@ const PageFlip = ({
       return;
     }
     const rect = ref.current.getBoundingClientRect();
+
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
-    console.log(x, y);
 
     const imageWidth = rect.width;
     const imageHeight = rect.height;
     console.log(imageWidth, imageHeight);
     const xPercentage = (x / imageWidth) * 100;
     const yPercentage = (y / imageHeight) * 100;
+    var a = x + ": " + xPercentage + "||" + y + ":" + yPercentage;
+
     const selected: any = await shopify.resourcePicker({
       type: "product",
       multiple: 1,
@@ -169,7 +171,6 @@ const PageFlip = ({
   const handleDragStop = useCallback(
     (e: MouseEvent, ref: any, markerIndex: number) => {
       if (!ref.current) return;
-
       const containerRect = ref.current.getBoundingClientRect();
       const x = e.clientX - containerRect.left;
       const y = e.clientY - containerRect.top;
@@ -180,7 +181,6 @@ const PageFlip = ({
       const xPercentage = (x / containerWidth) * 100;
       const yPercentage = (y / containerHeight) * 100;
 
-      console.log(xPercentage, yPercentage, "Percanteage");
       setMarkers((prevMarkers) => {
         const newMarkers = [...prevMarkers];
         const marker = newMarkers[markerIndex];
@@ -268,9 +268,12 @@ const PageFlip = ({
                           onStop={(e: any) =>
                             handleDragStop(e, leftImageRef, index)
                           }
+                          onDrag={(e: any) =>
+                            handleDragStop(e, leftImageRef, index)
+                          }
                         >
                           <div
-                            className="image-hotspots--pin  absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                            className="image-hotspots--pin z-20 absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
                             style={{
                               backgroundColor: hotspotColor || marker.color,
                               top: `${marker.yPercentage}%`,
@@ -312,12 +315,15 @@ const PageFlip = ({
                       marker.imageIndex === currentPage + 1 && (
                         <Draggable
                           key={marker.pointId}
-                          onStop={(e: any, data) =>
+                          onStop={(e: any) =>
+                            handleDragStop(e, rightImageRef, index)
+                          }
+                          onDrag={(e: any) =>
                             handleDragStop(e, rightImageRef, index)
                           }
                         >
                           <div
-                            className="image-hotspots--pin  absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                            className="image-hotspots--pin z-20  absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
                             style={{
                               backgroundColor: hotspotColor || marker.color,
                               top: `${marker.yPercentage}%`,
