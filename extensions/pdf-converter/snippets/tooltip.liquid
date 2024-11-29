@@ -4,6 +4,11 @@
     {% if product %}
     <h3 class="text-lg font-semibold text-gray-800">{{ product.title }}</h3>
     <p class="text-sm text-gray-600">{{ product.description | truncatewords: 10 }}</p>
+    {% if product.featured_image %}
+    <img src="{{ product.featured_image | img_url: 'medium' }}" alt="{{ product.title }}">
+    {% else %}
+    <img src="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png" alt="{{ product.title }}">
+    {% endif %}
     <p class="text-sm text-gray-800 mt-2">${{ product.price | money }}</p>
 
     <form action="/cart/add" method="post" class="mt-4" id="add-to-cart-form-{{ data_hotspot_index }}">

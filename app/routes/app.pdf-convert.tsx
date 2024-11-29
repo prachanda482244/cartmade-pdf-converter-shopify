@@ -440,8 +440,6 @@ const PDFConverter = () => {
               onClick={() => setDeleteId(id)}
               className="flex items-center text-xs font-normal text-gray-700 font- gap-2"
             >
-              {id}
-              {selectedResources}
               <Thumbnail alt={pdfName} source={frontPage} size="small" />
               <span
                 onClick={() => navigate(`/app/details/${id}`)}
@@ -452,7 +450,7 @@ const PDFConverter = () => {
             </div>
           </Text>
         </IndexTable.Cell>
-        <IndexTable.Cell>{deleteId} Jul 20 at 3:46pm</IndexTable.Cell>
+        <IndexTable.Cell> Jul 20 at 3:46pm</IndexTable.Cell>
         <IndexTable.Cell>600.65 KB</IndexTable.Cell>
         <IndexTable.Cell>
           <p
