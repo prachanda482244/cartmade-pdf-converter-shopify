@@ -146,12 +146,13 @@ const GlobalSettings = () => {
       </ButtonGroup>
 
       <div className="mt-6">
-        {" "}
-        {ActiveComponent && activeButton === "buttonDesign" && (
-          <ActiveComponent buttonSettings={buttonSettings} />
-        )}
-        {ActiveComponent && activeButton !== "buttonDesign" && (
-          <ActiveComponent />
+        {ActiveComponent && (
+          <ActiveComponent
+            {...(activeButton === "buttonDesign" ||
+            activeButton === "tooltipDesign"
+              ? { buttonSettings }
+              : {})}
+          />
         )}
       </div>
     </Page>

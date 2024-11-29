@@ -12,7 +12,7 @@ import { useCallback, useState } from "react";
 import { SortAscendingIcon, SortDescendingIcon } from "@shopify/polaris-icons";
 import CustomPopoverComponent from "./polaris-components/CustomPopoverComponent";
 
-const ToolTipSettings = () => {
+const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
   const [selected, setSelected] = useState("enabled");
 
   const handleSelectChange = useCallback(
@@ -38,7 +38,7 @@ const ToolTipSettings = () => {
     },
     {
       label: "xl",
-      value: "24px",
+      value: "30px",
       prefix: <Icon source={SortAscendingIcon} />,
     },
   ];
@@ -46,7 +46,7 @@ const ToolTipSettings = () => {
   const [backgroundColor, setBackgroundColor] = useState({
     hue: 0,
     saturation: 0,
-    brightness: 0,
+    brightness: 100,
   });
   const [fontColor, setFontColor] = useState({
     hue: 0,
@@ -93,8 +93,8 @@ const ToolTipSettings = () => {
       }}
     >
       <Card roundedAbove="sm">
-        <div className="flex ">
-          <div className="w-1/3">
+        <div className="flex gap-2 ">
+          <div className="w-1/3 border-0 pr-3 border-r-2">
             <div className=" mb-3">
               <Select
                 label="Font Settings"
@@ -145,52 +145,75 @@ const ToolTipSettings = () => {
               >
                 Live preview:
               </div>
-              <Card roundedAbove="xl">
-                <div>
-                  <div className="h-auto w-full">
-                    <div className="wrapper  flex w-full ">
-                      <div className="img w-[40%] ">
-                        <img
-                          className="w-full"
-                          src="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
-                          alt="Procudt"
-                        />
-                      </div>
-                      <div className="wrapper flex flex-col gap-2 w-[60%]">
-                        <div className="title flex flex-col gap-2">
-                          <h1 className="font-semibold text-lg">Title</h1>
-                          <p className="tracking-wider">
-                            Lorem ipsum dolor sit amet consectetur adipisicing
-                            elit. Ad, mollitia, consectetur ex unde numquam
-                            minus illum enim
-                          </p>
+              <div
+                className=" p-4 rounded-lg border border-[#ccc]"
+                style={{
+                  backgroundColor: backgroundHexColor,
+                }}
+              >
+                <div className="h-auto w-full">
+                  <div className=" flex w-full ">
+                    <div className="img w-[40%] ">
+                      <img
+                        className="w-full"
+                        src="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
+                        alt="Procudt"
+                      />
+                    </div>
+                    <div className=" flex flex-col gap-2 w-[60%]">
+                      <div className="title flex flex-col gap-2">
+                        <h1
+                          className={`font-semibold`}
+                          style={{
+                            fontSize: selected,
+                            color: fontHexColor,
+                          }}
+                        >
+                          Title
+                        </h1>
+                        <p
+                          style={{
+                            color: fontHexColor,
+                          }}
+                          className="tracking-wider"
+                        >
+                          Lorem ipsum dolor sit amet consectetur adipisicing
+                          elit. Ad, mollitia, consectetur ex unde numquam minus
+                          illum enim
+                        </p>
+                        <span style={{ color: priceHexColor }}>$£2,500.00</span>
 
+                        <div className=" flex items-center gap-2  ">
                           <button
-                            className="overflow-hidden Polaris-Button Polaris-Button--pressable Polaris-Button--variantPrimary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter Polaris-Button--iconWithText "
+                            className="py-1 px-2"
                             type="button"
-                            style={
-                              {
-                                //   backgroundColor: bgHexColor,
-                                //   color: textHexColor,
-                                //   fontWeight: 400,
-                                //   borderWidth,
-                                //   borderStyle: "solid",
-                                //   borderColor: borderHexColor,
-                                //   borderRadius,
-                                //   fontSize,
-                                //   boxShadow: `2px 2px ${shadow}px ${shadowHexColor}`,
-                                //   padding: `${paddingY}px ${paddingX}px`,
-                              }
-                            }
+                            style={{
+                              backgroundColor: jsonValue?.backgroundColor,
+                              color: jsonValue?.textColor,
+                              fontWeight: 400,
+                              borderWidth: jsonValue?.borderWidth,
+                              borderStyle: "solid",
+                              borderColor: jsonValue?.borderColor,
+                              borderRadius: jsonValue?.borderRadius,
+                              fontSize: jsonValue?.fontSize,
+                              boxShadow: `2px 2px ${jsonValue?.shadow}px ${jsonValue?.shadowColor}`,
+                              // padding: `${jsonValue?.paddingY}px ${jsonValue?.paddingX}px`,
+                            }}
                           >
-                            {"buttonText"}
+                            {jsonValue?.buttonText}
+                          </button>
+                          <button
+                            style={{ color: fontHexColor }}
+                            className="text-white rounded-sm shadow-md py-1 px-2 bg-transparent border border-[#ccc]"
+                          >
+                            View Product
                           </button>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
-              </Card>
+              </div>
             </Layout.Section>
           </div>
         </div>
