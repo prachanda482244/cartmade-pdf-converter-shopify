@@ -1,2 +1,4 @@
 ghostscript
 graphicsmagick
+graphicsmagick-dbg
+graphicsmagick-imagemagick-compat
