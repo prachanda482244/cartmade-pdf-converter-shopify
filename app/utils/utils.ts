@@ -1,60 +1,47 @@
-import poppler from "pdf-poppler";
+import { fromPath } from "pdf2pic";
 import path from "path";
 import fs from "fs/promises";
 import axios from "axios";
+import { PDFDocument } from "pdf-lib";
 
-// export const extractImagesFromPDFS = async (
-//   pdfPath: string,
-// ): Promise<string[]> => {
-//   const outputDir = path.dirname(pdfPath);
-//   const outputPrefix = path.basename(pdfPath, path.extname(pdfPath));
-//   const outputFormat = "png";
-
-//   const options = {
-//     format: outputFormat,
-//     out_dir: outputDir,
-//     out_prefix: outputPrefix,
-//     page: null,
-//   };
-
-//   try {
-//     await poppler.convert(pdfPath, options);
-
-//     const imageFiles = fs
-//       .readdirSync(outputDir)
-//       .filter(
-//         (file) => file.startsWith(outputPrefix), //&& file.endsWith(`.${outputFormat}`,
-//       )
-//       .map((file) => path.join(outputDir, file))
-//       .filter((img) => img.endsWith(".png"));
-
-//     return imageFiles;
-//   } catch (error) {
-//     console.error("Error converting PDF to images:", error);
-//     throw new Error("PDF conversion failed");
-//   }
-// };
+async function countPdfPages(filePath: string) {
+  const pdfBytes = await fs.readFile(filePath);
+  const pdfDoc = await PDFDocument.load(pdfBytes);
+  return pdfDoc.getPageCount();
+}
 
 export const extractImagesFromPDF = async (
   pdfPath: string,
 ): Promise<string[]> => {
-  const outputDir = path.join(process.cwd(), "public", "uploads");
+  const outputDir = path.dirname(pdfPath);
   const outputPrefix = path.basename(pdfPath, path.extname(pdfPath));
-  const outputFormat = "png";
 
   const options = {
-    format: outputFormat,
-    out_dir: outputDir,
-    out_prefix: outputPrefix,
-    page: null,
+    density: 100,
+    saveFilename: outputPrefix,
+    savePath: outputDir,
+    format: "png",
+    width: 595,
+    height: 842,
   };
+  const totalPages = await countPdfPages(pdfPath);
+  const convert = fromPath(pdfPath, options);
 
-  await poppler.convert(pdfPath, options);
+  const imageUrls: string[] = [];
+  for (let page = 1; page <= totalPages; page++) {
+    try {
+      const resolve = await convert(page, { responseType: "image" });
+      console.log(`Page ${page} is now converted to an image`);
 
-  const files = await fs.readdir(outputDir);
-  return files
-    .filter((file) => file.startsWith(outputPrefix) && file.endsWith(".png"))
-    .map((file) => `/uploads/${file}`);
+      const imagePath: any = resolve.path;
+      const imageUrl = `/uploads/${path.basename(imagePath)}`;
+      imageUrls.push(imageUrl);
+    } catch (err) {
+      console.error(`Error converting page to image:`, err);
+    }
+  }
+
+  return imageUrls;
 };
 export const uploadToShopify = async (
   imagePaths: string[],

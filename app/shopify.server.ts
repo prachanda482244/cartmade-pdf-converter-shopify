@@ -20,6 +20,7 @@ const shopify = shopifyApp({
   restResources,
   future: {
     unstable_newEmbeddedAuthStrategy: true,
+    wip_optionalScopesApi: true,
   },
   ...(process.env.SHOP_CUSTOM_DOMAIN
     ? { customShopDomains: [process.env.SHOP_CUSTOM_DOMAIN] }
