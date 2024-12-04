@@ -13,7 +13,6 @@
 {% assign array_length = pdfData.images | size %}
 {% assign images = pdfData.images %}
 {% assign points = images.points %}
-{{toolTipData}}
 
 {% for image in images %}
 {% assign pageIndex = forloop.index | minus: 1 %}
