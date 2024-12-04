@@ -40,6 +40,7 @@ import { Modal, TitleBar } from "@shopify/app-bridge-react";
 import { progress } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { addPlan } from "app/store/slices/planSlice";
+import DeleteModal from "app/components/DeleteModal";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
@@ -209,12 +210,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     });
   } else if (request.method === "DELETE" || request.method === "delete") {
     const formData = await request.formData();
-    const metafieldId: any = formData.get("metafieldId");
-    if (!metafieldId) {
+    const metafieldIds: any = formData.get("metafieldIds");
+    if (!metafieldIds) {
       return json({ error: "No metafieldId provided" }, { status: 400 });
     }
-    try {
-      const DELETE_META_FIELD = `
+    const idsArray = JSON.parse(metafieldIds);
+
+    if (!Array.isArray(idsArray) || idsArray.length === 0) {
+      return json({ error: "Invalid metafieldIds provided" }, { status: 400 });
+    }
+
+    const DELETE_META_FIELD = `
       mutation DeleteMetafield($id: ID!) {
         metafieldDelete(input: { id: $id }) {
           deletedId
@@ -226,20 +232,31 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       }
     `;
 
-      const response = await admin.graphql(DELETE_META_FIELD, {
-        variables: {
-          id: metafieldId,
-        },
+    try {
+      const deletePromises = idsArray.map((id) => {
+        const formattedId = `gid://shopify/Metafield/${id}`;
+
+        return admin.graphql(DELETE_META_FIELD, {
+          variables: {
+            id: formattedId,
+          },
+        });
       });
-      const { data } = await response.json();
-      if (!data) {
-        return json({ error: "Failed to delete metafield" }, { status: 400 });
-      }
-      return { message: "Metafield deleted successfully" };
+      const results = await Promise.all(deletePromises);
+
+      results.forEach((response) => {
+        const data = response.json();
+        if (!data) {
+          return json({ error: "Unable to remove metafield" }, { status: 400 });
+        }
+      });
+      return json({
+        success: true,
+        message: "Metafields deleted successfully",
+      });
     } catch (error: any) {
       console.error(error, "Errors");
       console.error(error?.body.errors, "Errorsssssssssssss");
-
       return { message: "something went wrong" };
     }
   }
@@ -323,19 +340,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const PDFConverter = () => {
   const loader: any = useLoaderData();
   const { pdfData } = useLoaderData<PDFVALUES>();
+
   const fetcher = useFetcher();
 
   const dispatch = useDispatch();
   const plan = useSelector((state: any) => state.plan.plan);
-  useEffect(() => {
-    dispatch(addPlan(loader.pricePlan && loader?.pricePlan?.name));
-  }, [loader.pricePlan && loader?.pricePlan.name]);
 
   const planType = plan || "Free";
 
   const maxUploads =
     planType === "Free" ? 1 : planType === "Basic" ? 5 : Infinity;
-  const [deleteId, setDeleteId] = useState<any>();
 
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
@@ -352,15 +366,13 @@ const PDFConverter = () => {
     });
   };
 
-  const handlePdfDelete = (id: string) => {
-    const metaFieldId = `gid://shopify/Metafield/${id}`;
+  const handlePdfDelete = () => {
     const formData = new FormData();
-    formData.append("metafieldId", metaFieldId);
+    formData.append("metafieldIds", JSON.stringify(selectedResources));
     fetcher.submit(formData, { method: "delete" });
+    selectedResources.splice(0, selectedResources.length);
     setFileUploadTracker(false);
-    setDeleteId(id);
   };
-
   // const simulateProgress = (fetcherState: string) => {
   //   let progress = 0;
 
@@ -397,6 +409,9 @@ const PDFConverter = () => {
   const navigate = useNavigate();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    dispatch(addPlan(loader.pricePlan && loader?.pricePlan?.name));
+  }, [loader.pricePlan && loader?.pricePlan.name, pdfData]);
 
   const handleFileChange = () => {
     if (uploadCount >= maxUploads) {
@@ -417,29 +432,32 @@ const PDFConverter = () => {
       fileInputRef.current.value = "";
     }
   };
+  const [modalActive, setModalActive] = useState(false);
 
+  const handleModalOpen = () => {
+    setModalActive(true);
+  };
+
+  const handleModalClose = () => {
+    setModalActive(false);
+  };
   const { selectedResources, allResourcesSelected, handleSelectionChange } =
     useIndexResourceState(pdfData, {
       selectedResources: [],
       resourceIDResolver: (resource) => resource.id,
     });
-  console.log(deleteId, "Delete id");
-  console.log(selectedResources, "SELECTED REou");
   const rowMarkup =
     pdfData?.length &&
     pdfData?.map(({ id, pdfName, frontPage, key }, index) => (
       <IndexTable.Row
         id={id}
         key={id}
-        selected={selectedResources.includes(id) && deleteId === id}
+        selected={selectedResources.includes(id)}
         position={index}
       >
         <IndexTable.Cell>
           <Text variant="bodyMd" fontWeight="bold" as="span">
-            <div
-              onClick={() => setDeleteId(id)}
-              className="flex items-center text-xs font-normal text-gray-700 font- gap-2"
-            >
+            <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
               <Thumbnail alt={pdfName} source={frontPage} size="small" />
               <span
                 onClick={() => navigate(`/app/details/${id}`)}
@@ -471,7 +489,7 @@ const PDFConverter = () => {
     {
       destructive: true,
       content: "Delete PDF",
-      onAction: handleModalToggle,
+      onAction: handleModalOpen,
     },
   ];
 
@@ -513,28 +531,12 @@ const PDFConverter = () => {
       />
 
       {/* Main section  */}
-      <Modal id="deleteModal">
-        <Box padding="300">
-          <Text as="p">
-            Are you sure you want to delete ? This cannot be undone.
-          </Text>
-        </Box>
-        <TitleBar title="Delete">
-          <button onClick={() => shopify.modal.hide("deleteModal")}>
-            Cancel
-          </button>
-          <button
-            variant="primary"
-            onClick={() => {
-              handlePdfDelete(deleteId);
-              shopify.modal.hide("deleteModal");
-            }}
-            tone="critical"
-          >
-            Delete
-          </button>
-        </TitleBar>
-      </Modal>
+      <DeleteModal
+        active={modalActive}
+        onClose={handleModalClose}
+        onDelete={handlePdfDelete}
+      />
+
       <div className=" gap-2 flex items-center justify-end mb-4">
         <Button
           icon={LayoutColumns3Icon}

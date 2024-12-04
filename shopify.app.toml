@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://defined-based-trunk-languages.trycloudflare.com"
+application_url = "https://third-devices-socks-avoiding.trycloudflare.com"
 embedded = true
 
 [build]
@@ -20,9 +20,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://defined-based-trunk-languages.trycloudflare.com/auth/callback",
-  "https://defined-based-trunk-languages.trycloudflare.com/auth/shopify/callback",
-  "https://defined-based-trunk-languages.trycloudflare.com/api/auth/callback"
+  "https://third-devices-socks-avoiding.trycloudflare.com/auth/callback",
+  "https://third-devices-socks-avoiding.trycloudflare.com/auth/shopify/callback",
+  "https://third-devices-socks-avoiding.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
