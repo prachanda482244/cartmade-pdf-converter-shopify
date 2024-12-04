@@ -193,7 +193,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     imageUrls.forEach((url) => {
       const imagePath = path.join(process.cwd(), "public", url);
-      // console.log(imagePath, "PATH");
       fs.unlink(imagePath, (err) => {
         if (err) console.error(`Error deleting file ${imagePath}:`, err);
       });
@@ -311,7 +310,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       console.warn("No PDF metafields found.");
       return { error: "No PDF metafields found." };
     }
-    // console.log(pdfMetafields, "FUCKING METAFIELDD");
 
     const actualResponse = pdfMetafields.map((pdf: any) => ({
       id: pdf.id.split("/")[pdf.id.split("/").length - 1],
@@ -326,7 +324,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       namespace: pdf.namespace,
     }));
 
-    // console.log(actualResponse, "ACtual response");
     return {
       pdfData: actualResponse,
       pricePlan: pricePlan.recurring_application_charges[0],

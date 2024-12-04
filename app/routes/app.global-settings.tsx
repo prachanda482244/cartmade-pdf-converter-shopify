@@ -164,7 +164,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 const GlobalSettings = () => {
   const [activeButton, setActiveButton] = useState<string>("app");
   const loaderData = useLoaderData<any>();
-  console.log(loaderData, "GLOBAL FILE");
   const handleButtonClick = useCallback(
     (link: string) => {
       if (activeButton === link) return;

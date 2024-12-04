@@ -31,8 +31,6 @@ export const extractImagesFromPDF = async (
   for (let page = 1; page <= totalPages; page++) {
     try {
       const resolve = await convert(page, { responseType: "image" });
-      console.log(`Page ${page} is now converted to an image`);
-
       const imagePath: any = resolve.path;
       const imageUrl = `/uploads/${path.basename(imagePath)}`;
       imageUrls.push(imageUrl);
@@ -79,7 +77,7 @@ export const uploadToShopify = async (
         ],
       };
 
-      const response = await axios.post(
+      await axios.post(
         `https://${shop}/admin/api/2024-10/graphql.json`,
         { query, variables },
         {
@@ -90,13 +88,6 @@ export const uploadToShopify = async (
         },
       );
 
-      console.log(response.data, "RESPONSE");
-      console.log(response.data.errors, "RESPONSE ERROR");
-      // if (response.data.data.fileCreate.userErrors.length) {
-      //   throw new Error(response.data.data.fileCreate.userErrors[0].message);
-      // }
-
-      // return response.data.data.fileCreate.files[0].originalSource;
       return "11";
     } catch (error: any) {
       console.error(`Error uploading image at ${imagePath}:`, error.message);

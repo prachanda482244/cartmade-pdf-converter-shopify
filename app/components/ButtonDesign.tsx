@@ -12,7 +12,6 @@ import HotspotButton from "./polaris-components/HotspotButton";
 import InputColorPicker from "./InputColorPicker";
 
 const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
-  console.log(jsonValue, "JSON");
   const fetcher = useFetcher();
   const [buttonText, setButtonText] = useState(
     jsonValue?.buttonText || "Add to cart",

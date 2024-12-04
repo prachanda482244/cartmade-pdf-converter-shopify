@@ -87,10 +87,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formdata: any = await request.formData();
     const images = formdata.get("images");
     const pdfName = formdata.get("pdfName");
-    // console.log(pdfName, "PDF NAME");
 
-    console.log(images, "IMAGES");
-    // console.log(typeof images, "TYPES OF IMAGES");
     if (typeof images !== "string") {
       return {
         error: "Invalid image data. Please upload valid images.",
@@ -111,7 +108,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       await metafield.save({
         update: true,
       });
-      // console.log(metafield, "metafield after update");
 
       if (!metafield) {
         console.warn("Failed to save metafield");
@@ -128,7 +124,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 const DetailPage = () => {
   const loaderData: any = useLoaderData();
-  console.log(loaderData, "LOADER DATA");
   const { pdfData }: any = useLoaderData();
   return (
     <div>

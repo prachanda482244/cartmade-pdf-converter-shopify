@@ -21,13 +21,11 @@ const flipBook = (elBook) => {
         ? pages[currentPage + 1].querySelector(".front,.tooltip")
         : null;
 
-    console.log(leftPage, "LEFT");
     const leftPoints = getPoints(leftPage);
     const rightPoints = getPoints(rightPage);
 
     points = [];
     if (leftPoints.length > 0) {
-      console.log("Points found on left page:");
       leftPoints.forEach((point, index) => {
         points.push(point);
       });
@@ -86,15 +84,12 @@ const flipBook = (elBook) => {
 
           const formData = new FormData();
           formData.append("id", variantId);
-          console.log(variantId, "VRIANLT");
           fetch("/cart/add.js", {
             method: "POST",
             body: formData,
           })
             .then((response) => response.json())
             .then((data) => {
-              console.log("Product added to cart:", data);
-
               const hotspotId = event.target.closest(".points").dataset.id;
               const targetPopover = document.querySelector(
                 `div[data-hotspot-id="${hotspotId}"]`,
@@ -115,7 +110,6 @@ const flipBook = (elBook) => {
               );
             });
         });
-        console.log(targetPopover, "TARGET POPER");
       });
     });
   };
@@ -124,7 +118,6 @@ const flipBook = (elBook) => {
     page.style.setProperty("--i", idx);
   });
 
-  console.log("Checked");
   const prevBtn = document.querySelector(".prev");
   const nextBtn = document.querySelector(".next");
 

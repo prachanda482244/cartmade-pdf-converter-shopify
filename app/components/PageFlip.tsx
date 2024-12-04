@@ -119,7 +119,6 @@ const PageFlip = ({
 
     const imageWidth = rect.width;
     const imageHeight = rect.height;
-    console.log(imageWidth, imageHeight);
     const xPercentage = (x / imageWidth) * 100;
     const yPercentage = (y / imageHeight) * 100;
     var a = x + ": " + xPercentage + "||" + y + ":" + yPercentage;
@@ -194,7 +193,6 @@ const PageFlip = ({
     [markers],
   );
 
-  console.log(markers, "MAREKRES");
   const handleSave = async () => {
     images.forEach((image) => {
       const imageMarkers = markers.filter(
