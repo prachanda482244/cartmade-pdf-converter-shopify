@@ -29,12 +29,12 @@ export const buttonsName: buttonsNameTypes[] = [
     name: "Tooltip Design",
     component: ToolTipSettings,
   },
-  {
-    index: 4,
-    link: "animationTypes",
-    name: "Animation Types",
-    component: AnimationTypes,
-  },
+  // {
+  //   index: 4,
+  //   link: "animationTypes",
+  //   name: "Animation Types",
+  //   component: AnimationTypes,
+  // },
 ];
 
 export const buttonDesigns: HotspotProps[] = [

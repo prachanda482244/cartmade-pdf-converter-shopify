@@ -29,10 +29,7 @@ const DeleteModal = ({ active, onClose, onDelete }: any) => {
           >
             <div className="flex justify-between items-center">
               <h2 className="text-xl font-semibold">Delete</h2>
-              <button
-                onClick={onClose}
-                className="text-gray-600 hover:text-red-800"
-              >
+              <button onClick={onClose}>
                 <Icon source={XIcon} tone="critical" />
               </button>
             </div>

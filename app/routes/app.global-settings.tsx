@@ -11,110 +11,160 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   if (request.method === "POST") {
     const formData = await request.formData();
+    const source = formData.get("source");
+    if (source === "ButtonDesign") {
+      const buttonText = formData.get("buttonText") as string;
+      const fontSize = formData.get("fontSize") as string;
+      const borderRadius = formData.get("borderRadius") as string;
+      const borderWidth = formData.get("borderWidth") as string;
+      const borderColor = formData.get("borderColor") as string;
+      const backgroundColor = formData.get("backgroundColor") as string;
+      const textColor = formData.get("textColor") as string;
+      const paddingX = formData.get("paddingX") as string;
+      const paddingY = formData.get("paddingY") as string;
+      const shadow = formData.get("shadow") as string;
+      const hotspotColor = formData.get("hotspotColor") as string;
+      const shadowColor = formData.get("shadowColor") as string;
+      const metafieldData = {
+        namespace: "cartmade",
+        key: "cod_button_settings",
+        value: JSON.stringify({
+          buttonText,
+          fontSize: parseInt(fontSize),
+          borderRadius: parseInt(borderRadius),
+          borderWidth: parseInt(borderWidth),
+          paddingX: parseInt(paddingX),
+          paddingY: parseInt(paddingY),
+          shadow: parseInt(shadow),
+          shadowColor,
+          borderColor,
+          hotspotColor,
+          backgroundColor,
+          textColor,
+        }),
+        type: "json",
+        owner_resource: "shop",
+      };
 
-    const buttonText = formData.get("buttonText") as string;
-    const fontSize = formData.get("fontSize") as string;
-    const borderRadius = formData.get("borderRadius") as string;
-    const borderWidth = formData.get("borderWidth") as string;
-    const borderColor = formData.get("borderColor") as string;
-    const backgroundColor = formData.get("backgroundColor") as string;
-    const textColor = formData.get("textColor") as string;
-    const paddingX = formData.get("paddingX") as string;
-    const paddingY = formData.get("paddingY") as string;
-    const shadow = formData.get("shadow") as string;
-    const hotspotColor = formData.get("hotspotColor") as string;
-    const shadowColor = formData.get("shadowColor") as string;
-    const metafieldData = {
-      namespace: "cartmade",
-      key: "cod_button_settings",
-      value: JSON.stringify({
-        buttonText,
-        fontSize: parseInt(fontSize),
-        borderRadius: parseInt(borderRadius),
-        borderWidth: parseInt(borderWidth),
-        paddingX: parseInt(paddingX),
-        paddingY: parseInt(paddingY),
-        shadow: parseInt(shadow),
-        shadowColor,
-        borderColor,
-        hotspotColor,
-        backgroundColor,
-        textColor,
-      }),
-      type: "json",
-      owner_resource: "shop",
-    };
-
-    const response = await fetch(
-      `https://${shop}/admin/api/${apiVersion}/metafields.json`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Shopify-Access-Token": accessToken,
+      const response = await fetch(
+        `https://${shop}/admin/api/${apiVersion}/metafields.json`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": accessToken,
+          },
+          body: JSON.stringify({ metafield: metafieldData }),
         },
-        body: JSON.stringify({ metafield: metafieldData }),
-      },
-    );
-
-    const responseData = await response.json();
-    if (!response.ok) {
-      return json(
-        { error: responseData.errors || "Failed to save metafield" },
-        { status: response.status },
       );
+
+      const responseData = await response.json();
+      if (!response.ok) {
+        return json(
+          { error: responseData.errors || "Failed to save metafield" },
+          { status: response.status },
+        );
+      }
+      return json({
+        message: "Public metafield saved successfully",
+        data: responseData,
+      });
+    } else if (source === "TooltipSettings") {
+      const backgroundColor = formData.get("backgroundColor");
+      const fontColor = formData.get("fontColor");
+      const priceColor = formData.get("priceColor");
+      const metafieldData = {
+        namespace: "cartmade",
+        key: "cod_tooltip_settings",
+        value: JSON.stringify({
+          backgroundColor,
+          fontColor,
+          priceColor,
+        }),
+        type: "json",
+        owner_resource: "shop",
+      };
+
+      const response = await fetch(
+        `https://${shop}/admin/api/${apiVersion}/metafields.json`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Shopify-Access-Token": accessToken,
+          },
+          body: JSON.stringify({ metafield: metafieldData }),
+        },
+      );
+
+      const responseData = await response.json();
+      if (!response.ok) {
+        return json(
+          { error: responseData.errors || "Failed to save metafield" },
+          { status: response.status },
+        );
+      }
+      return json({
+        message: "Public metafield saved successfully",
+        data: responseData,
+      });
     }
-    return json({
-      message: "Public metafield saved successfully",
-      data: responseData,
-    });
+    return 1;
   }
 };
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { admin } = await authenticate.admin(request);
 
-  const GET_BUTTON_SETTINGS_QUERY = `
-  query GetButtonSettings {
-    shop {
-      metafield(namespace: "cartmade", key: "cod_button_settings") {
-        id
-        key
-        value
-        jsonValue
-        type
-        updatedAt
+  const fetchMetafield = async (namespace: string, key: string) => {
+    const query = `
+      query GetMetafield {
+        shop {
+          metafield(namespace: "${namespace}", key: "${key}") {
+            id
+            key
+            value
+            jsonValue
+            type
+            updatedAt
+          }
+        }
       }
+    `;
+    try {
+      const response = await admin.graphql(query);
+      const data = await response.json();
+      return data?.data?.shop?.metafield || null;
+    } catch (error) {
+      console.error(`Error fetching metafield (${key}):`, error);
+      return null;
     }
-  }
-`;
+  };
 
   try {
-    const data = await admin.graphql(GET_BUTTON_SETTINGS_QUERY);
-    if (!data) return { error: "No data found" };
-    const response = await data.json();
-    if (!response.data) {
-      console.error("GraphQL errors:", "Failed to fetch settings");
-      return { error: "Failed to fetch button settings metafield." };
+    const [buttonSettings, tooltipSettings] = await Promise.all([
+      fetchMetafield("cartmade", "cod_button_settings"),
+      fetchMetafield("cartmade", "cod_tooltip_settings"),
+    ]);
+
+    if (!buttonSettings && !tooltipSettings) {
+      return { error: "No metafield data found." };
     }
 
-    const buttonSettings = response?.data?.shop?.metafield;
-
-    if (!buttonSettings) {
-      console.warn("No button settings metafield found.");
-      return { error: "Button settings metafield not found." };
-    }
-
-    return { buttonSettings };
+    return {
+      buttonSettings,
+      tooltipSettings,
+    };
   } catch (error) {
-    console.error("Error fetching button settings:", error);
-    return { error: "Unexpected error occurred while fetching metafield." };
+    console.error("Error fetching metafields:", error);
+    return { error: "Unexpected error occurred while fetching metafields." };
   }
 };
 
 const GlobalSettings = () => {
   const [activeButton, setActiveButton] = useState<string>("app");
   const loaderData = useLoaderData<any>();
+  console.log(loaderData, "GLOBAL FILE");
   const handleButtonClick = useCallback(
     (link: string) => {
       if (activeButton === link) return;
@@ -124,6 +174,7 @@ const GlobalSettings = () => {
   );
 
   const buttonSettings = loaderData?.buttonSettings || {};
+  const tooltipSettings = loaderData?.tooltipSettings || {};
 
   const ActiveComponent = buttonsName.find(
     ({ link }) => link === activeButton,
@@ -150,7 +201,7 @@ const GlobalSettings = () => {
           <ActiveComponent
             {...(activeButton === "buttonDesign" ||
             activeButton === "tooltipDesign"
-              ? { buttonSettings }
+              ? { buttonSettings, tooltipSettings }
               : {})}
           />
         )}

@@ -1,7 +1,8 @@
 {% assign product = all_products[handle] %}
+
 <div data-hotspot-id="hotspot-{{data_page_index}}-{{data_hotspot_index}}"
     class="custom-popover hidden  bg-white p-4 border border-gray-200 rounded shadow-lg opacity-100 transition-opacity duration-300 pointer-events-none">
-    <div class="relative">
+    <div class="relative bg-[{{tooltipData.backgroundColor}}] text-[{{tooltipData.fontColor}}]">
         <span class="cross-btn">
             <svg width="64px" height="64px" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"
                 stroke="#ff0000">
@@ -24,15 +25,15 @@
             </div>
             <div class="modal-content-item">
                 {% if product %}
-                <h3 class="text-xxl font-semibold text-black">{{ product.title }}</h3>
+                <h3 class="text-xxl font-semibold text-[{{tooltipData.fontColor}}] ">{{ product.title }}</h3>
                 <p class="text-md desc">{{ product.description | truncatewords: 10 }}</p>
-                <p class="text-md modal-price mt-2">${{ product.price | money }}</p>
+                <p class="text-md modal-price text-[{{tooltipData.priceColor}}] mt-2">${{ product.price | money }}</p>
 
                 <form action="/cart/add" method="post" class="mt-4" id="add-to-cart-form-{{ data_hotspot_index }}">
                     <!-- Variant selection dropdown (if multiple variants) -->
                     {% if product.variants.size > 1 %}
                     <select name="id"
-                        class="variant-select pointer-events-auto cursor-pointer w-full p-2 border rounded mt-2">
+                        class="variant-select text-black pointer-events-auto cursor-pointer w-full p-2 border rounded mt-2">
                         {% for variant in product.variants %}
                         <option value="{{ variant.id }}">{{ variant.title }}</option>
                         {% endfor %}
@@ -41,11 +42,12 @@
                     <input type="hidden" name="id" value="{{ product.variants.first.id }}">
                     {% endif %}
                     <button type="button"
-                        class="add-to-cart-btn pointer-events-auto cursor-pointer bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition mt-4">
-                        Add to Cart
+                        style="box-shadow: 2px 2px {{buttonData.shadow}}px {{buttonData.shadowColor}}; border:{{buttonData.borderWidth}}px solid {{buttonData.borderColor}};"
+                        class="add-to-cart-btn pointer-events-auto cursor-pointer bg-[{{buttonData.backgroundColor}}] text-[{{buttonData.textColor}}] py-[{{buttonData.paddingY}}px] px-[{{buttonData.paddingX}}px] rounded-[{{buttonData.borderRadius}}] hover:bg-[{{buttonData.textColor}}] hover:text-[{{buttonData.backgroundColor}}] transition mt-4 text-[{{buttonData.fontSize}}px]">
+                        {{buttonData.buttonText}}
                     </button>
                     <button type="button"
-                        class="add-to-cart-btn pointer-events-auto cursor-pointer bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition mt-4">
+                        class="add-to-cart-btn pointer-events-auto cursor-pointer bg-blue-500 text-white  py-[{{buttonData.paddingY}}px] px-[{{buttonData.paddingX}}px]  rounded hover:bg-blue-600 transition mt-4">
                         view product
                     </button>
                 </form>

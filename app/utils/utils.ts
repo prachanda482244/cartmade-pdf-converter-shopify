@@ -21,8 +21,8 @@ export const extractImagesFromPDF = async (
     saveFilename: outputPrefix,
     savePath: outputDir,
     format: "png",
-    width: 595,
-    height: 842,
+    width: 1000,
+    height: 1000,
   };
   const totalPages = await countPdfPages(pdfPath);
   const convert = fromPath(pdfPath, options);

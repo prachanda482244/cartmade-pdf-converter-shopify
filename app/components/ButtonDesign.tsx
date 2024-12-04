@@ -1,20 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import {
-  Button,
-  Modal,
   TextField,
   Card,
   BlockStack,
-  hsbToHex,
   Layout,
-  Popover,
-  ColorPicker,
   RangeSlider,
   Page,
 } from "@shopify/polaris";
 import { useFetcher } from "@remix-run/react";
-import CustomPopoverComponent from "./polaris-components/CustomPopoverComponent";
 import HotspotButton from "./polaris-components/HotspotButton";
+import InputColorPicker from "./InputColorPicker";
 
 const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   console.log(jsonValue, "JSON");
@@ -35,64 +30,22 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   const [borderWidth, setBorderWidth] = useState<number>(
     jsonValue?.borderWidth || 0,
   );
+  const [hotspotColor, setHotspotColor] = useState(
+    jsonValue?.hotspotColor || "#a34423",
+  );
 
-  const [borderColor, setBorderColor] = useState({
-    hue: 0,
-    saturation: 0,
-    brightness: 0,
-  });
-  const [shadowColor, setShadowColor] = useState({
-    hue: 0,
-    saturation: 0,
-    brightness: 0,
-  });
-  const [backgroundColor, setBackgroundColor] = useState({
-    hue: 240,
-    saturation: 0,
-    brightness: 0,
-  });
-  const [hotspotColor, setHotspotColor] = useState({
-    hue: 240,
-    saturation: 0,
-    brightness: 0,
-  });
-
-  const [textColor, setTextColor] = useState({
-    hue: 0,
-    brightness: 1,
-    saturation: 0,
-  });
+  const [borderColor, setBorderColor] = useState(
+    jsonValue?.borderColor || "#ffffff",
+  );
+  const [shadowColor, setShadowColor] = useState(
+    jsonValue?.shadowColor || "#345acd",
+  );
+  const [backgroundColor, setBackgroundColor] = useState(
+    jsonValue?.backgroundColor || "#000000",
+  );
+  const [textColor, setTextColor] = useState("#fff433");
 
   const handleButtonTextChange = (value: string) => setButtonText(value);
-
-  const [bgPopoverActive, setBgPopoverActive] = useState(false);
-  const [hotspotPopoverActive, setHotspotPopoverActive] = useState(false);
-  const [textPopoverActive, setTextPopoverActive] = useState(false);
-  const [shadowPopoverActive, setShadowPopoverActive] = useState(false);
-  const [borderPopoverActive, setBorderPopoverActive] = useState(false);
-
-  const toggleBgPopoverActive = () => setBgPopoverActive((active) => !active);
-  const toggleHotspotPopoverActive = () =>
-    setHotspotPopoverActive((active) => !active);
-  const toggleShadowPopoverActive = () =>
-    setShadowPopoverActive((active) => !active);
-  const toggleTextPopoverActive = () =>
-    setTextPopoverActive((active) => !active);
-  const toggleBorderPopoverActive = () =>
-    setBorderPopoverActive((active) => !active);
-
-  const bgHexColor = hsbToHex(backgroundColor);
-  const textHexColor = hsbToHex(textColor) || jsonValue?.textColor;
-  const borderHexColor = hsbToHex(borderColor) || jsonValue?.borderColor;
-  const hotspotHexColor = hsbToHex(hotspotColor) || jsonValue?.hotspotColor;
-  const shadowHexColor = hsbToHex(shadowColor) || jsonValue?.shadowColor;
-
-  const handleBgColorChange = (newColor: any) => setBackgroundColor(newColor);
-  const handleTextColorChange = (newColor: any) => setTextColor(newColor);
-  const handleHotspotColorChange = (newColor: any) => setHotspotColor(newColor);
-  const handleBorderColorChange = (newColor: any) => setBorderColor(newColor);
-  const handleShadowColorChange = (newColor: any) => setShadowColor(newColor);
-
   const handleFontSizeChange = (value: number) => setFontSize(value);
   const handleHotspotSizeChange = (value: number) => setHotspotValue(value);
   const handlePaddingYChange = (value: number) => setPaddingY(value);
@@ -103,25 +56,26 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
 
   const handleSubmit = () => {
     const formData = new FormData();
+    formData.append("source", "ButtonDesign");
     formData.append("buttonText", buttonText);
     formData.append("fontSize", fontSize.toString());
     formData.append("borderRadius", borderRadius.toString());
     formData.append("borderWidth", borderWidth.toString());
 
-    formData.append("borderColor", borderHexColor);
-    formData.append("backgroundColor", bgHexColor);
-    formData.append("textColor", textHexColor);
+    formData.append("borderColor", borderColor);
+    formData.append("backgroundColor", backgroundColor);
+    formData.append("textColor", textColor);
     formData.append("paddingY", paddingY.toString());
     formData.append("paddingX", paddingX.toString());
     formData.append("shadow", shadow.toString());
-    formData.append("shadowColor", shadowHexColor);
-    formData.append("hotspotColor", hotspotHexColor);
+    formData.append("shadowColor", shadowColor);
+    formData.append("hotspotColor", hotspotColor);
 
     fetcher.submit(formData, { method: "post" });
   };
 
   if (fetcher.state === "loading") {
-    shopify.toast.show("Setting saved successfully");
+    shopify.toast.show("Button setting saved successfully");
   }
 
   return (
@@ -138,16 +92,13 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
           <Card>
             <BlockStack align="center">
               <div className="flex flex-col gap-3">
-                <CustomPopoverComponent
-                  label="Hotspot Color"
-                  popoverActive={hotspotPopoverActive}
-                  togglePopoverActive={toggleHotspotPopoverActive}
-                  hexColor={hotspotHexColor || jsonValue?.hotspotColor}
-                  handleColorChange={handleHotspotColorChange}
-                  color={hotspotColor}
+                <InputColorPicker
+                  title="Hotspot Color"
+                  setState={setHotspotColor}
+                  value={hotspotColor}
                 />
 
-                <div className="flex items-center gap-4 ">
+                <div className="flex items-center justify-between  gap-4 ">
                   <div className="w-[30%]">
                     <RangeSlider
                       label="Hotspot size"
@@ -161,11 +112,9 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
 
                   <div className="grid   grid-cols-2 h-12 gap-6 sm:grid-cols-3 md:grid-cols-5">
                     <div
-                      className="image-hotspots--pin mt-3 absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                      className="image-hotspots--pin mt-6 ml-20 absolute flex justify-center items-center text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
                       style={{
-                        backgroundColor: hotspotHexColor,
-                        // height: hotspotValue,
-                        // width: hotspotValue,
+                        backgroundColor: hotspotColor,
                       }}
                     >
                       <HotspotButton />
@@ -193,41 +142,26 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                   />
                 </div>
 
-                {/* Customer component for colors */}
-                <CustomPopoverComponent
-                  label="Background Color"
-                  popoverActive={bgPopoverActive}
-                  togglePopoverActive={toggleBgPopoverActive}
-                  hexColor={bgHexColor || jsonValue?.backgroundColor}
-                  handleColorChange={handleBgColorChange}
-                  color={backgroundColor}
+                <InputColorPicker
+                  title="Background Color"
+                  setState={setBackgroundColor}
+                  value={backgroundColor}
                 />
 
-                <CustomPopoverComponent
-                  label="Text Color"
-                  popoverActive={textPopoverActive}
-                  togglePopoverActive={toggleTextPopoverActive}
-                  hexColor={textHexColor || jsonValue?.textColor}
-                  handleColorChange={handleTextColorChange}
-                  color={textColor}
+                <InputColorPicker
+                  title="Text Color"
+                  setState={setTextColor}
+                  value={textColor}
                 />
-
-                <CustomPopoverComponent
-                  label="Shadow Color"
-                  popoverActive={shadowPopoverActive}
-                  togglePopoverActive={toggleShadowPopoverActive}
-                  hexColor={shadowHexColor || jsonValue?.shadowColor}
-                  handleColorChange={handleShadowColorChange}
-                  color={shadowColor}
+                <InputColorPicker
+                  title="Shadow Color"
+                  setState={setShadowColor}
+                  value={shadowColor}
                 />
-
-                <CustomPopoverComponent
-                  label="Border Color"
-                  popoverActive={borderPopoverActive}
-                  togglePopoverActive={toggleBorderPopoverActive}
-                  hexColor={borderHexColor || jsonValue?.borderColor}
-                  handleColorChange={handleBorderColorChange}
-                  color={borderColor}
+                <InputColorPicker
+                  title="Border Color"
+                  setState={setBorderColor}
+                  value={borderColor}
                 />
 
                 <div className=" flex max-w-[256px] flex-col gap-3">
@@ -299,15 +233,15 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                         className="overflow-hidden Polaris-Button Polaris-Button--pressable Polaris-Button--variantPrimary Polaris-Button--sizeMedium Polaris-Button--textAlignCenter Polaris-Button--fullWidth Polaris-Button--iconWithText "
                         type="button"
                         style={{
-                          backgroundColor: bgHexColor,
-                          color: textHexColor,
+                          backgroundColor: backgroundColor,
+                          color: textColor,
                           fontWeight: 400,
                           borderWidth,
                           borderStyle: "solid",
-                          borderColor: borderHexColor,
+                          borderColor: borderColor,
                           borderRadius,
                           fontSize,
-                          boxShadow: `2px 2px ${shadow}px ${shadowHexColor}`,
+                          boxShadow: `2px 2px ${shadow}px ${shadowColor}`,
                           padding: `${paddingY}px ${paddingX}px`,
                         }}
                       >

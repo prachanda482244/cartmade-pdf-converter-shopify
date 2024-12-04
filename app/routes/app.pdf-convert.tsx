@@ -458,7 +458,7 @@ const PDFConverter = () => {
         <IndexTable.Cell>
           <Text variant="bodyMd" fontWeight="bold" as="span">
             <div className="flex items-center text-xs font-normal text-gray-700 font- gap-2">
-              <Thumbnail alt={pdfName} source={frontPage} size="small" />
+              <Thumbnail alt={pdfName} source={frontPage} size="medium" />
               <span
                 onClick={() => navigate(`/app/details/${id}`)}
                 className="hover:underline"
@@ -482,9 +482,7 @@ const PDFConverter = () => {
         </IndexTable.Cell>
       </IndexTable.Row>
     ));
-  const handleModalToggle = () => {
-    shopify.modal.toggle("deleteModal");
-  };
+
   const promotedBulkActions = [
     {
       destructive: true,
@@ -499,8 +497,6 @@ const PDFConverter = () => {
   };
 
   const [view, setView] = useState<string>("list");
-  const [buttonListActive, setButtonListActive] = useState<boolean>(false);
-  const [buttonGridActive, setButtonGridActive] = useState<boolean>(false);
 
   return (
     <Page
@@ -540,21 +536,13 @@ const PDFConverter = () => {
       <div className=" gap-2 flex items-center justify-end mb-4">
         <Button
           icon={LayoutColumns3Icon}
-          pressed={buttonGridActive}
-          onClick={() => {
-            setView("list");
-            setButtonGridActive(true);
-            setButtonListActive(false);
-          }}
+          pressed={view === "list"}
+          onClick={() => setView("list")}
         ></Button>
         <Button
-          pressed={buttonListActive}
+          pressed={view === "grid"}
           icon={ListBulletedIcon}
-          onClick={() => {
-            setView("grid");
-            setButtonListActive(true);
-            setButtonGridActive(false);
-          }}
+          onClick={() => setView("grid")}
         ></Button>
       </div>
       {loader.error && fetcher.state !== "submitting" && !pdfData ? (
@@ -624,7 +612,7 @@ const PDFConverter = () => {
                         <Thumbnail
                           alt={pdfName}
                           source={frontPage}
-                          size="medium"
+                          size="large"
                         />
                       </div>
                       <div className="flex flex-col justify-between w-full">

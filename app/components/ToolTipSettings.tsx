@@ -1,20 +1,15 @@
-import {
-  Card,
-  ColorPicker,
-  hsbToHex,
-  Icon,
-  Layout,
-  Page,
-  Select,
-  Text,
-} from "@shopify/polaris";
+import { Card, Icon, Layout, Page, Select } from "@shopify/polaris";
 import { useCallback, useState } from "react";
 import { SortAscendingIcon, SortDescendingIcon } from "@shopify/polaris-icons";
-import CustomPopoverComponent from "./polaris-components/CustomPopoverComponent";
+import InputColorPicker from "./InputColorPicker";
+import { useFetcher } from "@remix-run/react";
 
-const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
+const ToolTipSettings = ({
+  buttonSettings: { jsonValue },
+  tooltipSettings: { jsonValue: tooltipJsonValue },
+}: any) => {
+  const fetcher = useFetcher();
   const [selected, setSelected] = useState("enabled");
-
   const handleSelectChange = useCallback(
     (value: string) => setSelected(value),
     [],
@@ -43,53 +38,34 @@ const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
     },
   ];
 
-  const [backgroundColor, setBackgroundColor] = useState({
-    hue: 0,
-    saturation: 0,
-    brightness: 0,
-  });
-  const [fontColor, setFontColor] = useState({
-    hue: 0,
-    saturation: 100,
-    brightness: 0,
-  });
-  const [priceColor, setPriceColor] = useState({
-    hue: 0,
-    saturation: 0,
-    brightness: 10,
-  });
+  const [backgroundColor, setBackgroundColor] = useState(
+    tooltipJsonValue?.backgroundColor || "#221aae",
+  );
+  const [fontColor, setFontColor] = useState(
+    tooltipJsonValue?.fontColor || "#ace345",
+  );
+  const [priceColor, setPriceColor] = useState(
+    tooltipJsonValue?.priceColor || "#544523",
+  );
 
-  const [backgroundPopoverActive, setBackgroundPopoverActive] = useState(false);
-  const [fontPopoverActive, setFontPopoverActive] = useState(false);
-  const [pricePopoverActive, setPricePopoverActive] = useState(false);
+  const handleSubmit = () => {
+    const formData = new FormData();
+    formData.append("source", "TooltipSettings");
+    formData.append("backgroundColor", backgroundColor);
+    formData.append("priceColor", priceColor);
+    formData.append("fontColor", fontColor);
+    fetcher.submit(formData, { method: "post" });
+  };
 
-  const toggleBackgroundPopoverActive = () =>
-    setBackgroundPopoverActive((active) => !active);
-
-  const toggleFontPopoverActive = () =>
-    setFontPopoverActive((active) => !active);
-
-  const togglePricePopoverActive = () =>
-    setPricePopoverActive((active) => !active);
-
-  const backgroundHexColor = hsbToHex(backgroundColor);
-  const fontHexColor = hsbToHex(fontColor);
-  const priceHexColor = hsbToHex(priceColor);
-
-  const handleBackgroundColorChange = (newColor: any) =>
-    setBackgroundColor(newColor);
-
-  const handleFontColorChange = (newColor: any) => setFontColor(newColor);
-
-  const handlePriceColorChange = (newColor: any) => setPriceColor(newColor);
-
+  if (fetcher.state === "loading") {
+    shopify.toast.show("Tooltip Setting saved successfully");
+  }
   return (
     <Page
       primaryAction={{
         content: "Save",
-        onAction: () => {
-          alert("save");
-        },
+        onAction: handleSubmit,
+        loading: fetcher.state === "submitting",
       }}
     >
       <Card roundedAbove="sm">
@@ -105,31 +81,21 @@ const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
             </div>
 
             <div className="flex flex-col gap-2">
-              <CustomPopoverComponent
-                label="Background color"
-                popoverActive={backgroundPopoverActive}
-                togglePopoverActive={toggleBackgroundPopoverActive}
-                hexColor={backgroundHexColor}
-                handleColorChange={handleBackgroundColorChange}
-                color={backgroundColor}
+              <InputColorPicker
+                title="Background color"
+                setState={setBackgroundColor}
+                value={backgroundColor}
               />
 
-              <CustomPopoverComponent
-                label="Font Color"
-                popoverActive={fontPopoverActive}
-                togglePopoverActive={toggleFontPopoverActive}
-                hexColor={fontHexColor}
-                handleColorChange={handleFontColorChange}
-                color={fontColor}
+              <InputColorPicker
+                title="Font color"
+                setState={setFontColor}
+                value={fontColor}
               />
-
-              <CustomPopoverComponent
-                label="Price Color"
-                popoverActive={pricePopoverActive}
-                togglePopoverActive={togglePricePopoverActive}
-                hexColor={priceHexColor}
-                handleColorChange={handlePriceColorChange}
-                color={priceColor}
+              <InputColorPicker
+                title="Price color"
+                setState={setPriceColor}
+                value={priceColor}
               />
             </div>
           </div>
@@ -148,7 +114,7 @@ const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
               <div
                 className=" p-4 rounded-lg border border-[#ccc]"
                 style={{
-                  backgroundColor: backgroundHexColor,
+                  backgroundColor: backgroundColor,
                 }}
               >
                 <div className="h-auto w-full">
@@ -166,14 +132,14 @@ const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
                           className={`font-semibold`}
                           style={{
                             fontSize: selected,
-                            color: fontHexColor,
+                            color: fontColor,
                           }}
                         >
                           Title
                         </h1>
                         <p
                           style={{
-                            color: fontHexColor,
+                            color: fontColor,
                           }}
                           className="tracking-wider"
                         >
@@ -181,7 +147,7 @@ const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
                           elit. Ad, mollitia, consectetur ex unde numquam minus
                           illum enim
                         </p>
-                        <span style={{ color: priceHexColor }}>$£2,500.00</span>
+                        <span style={{ color: priceColor }}>$£2,500.00</span>
 
                         <div className=" flex items-center gap-2  ">
                           <button
@@ -203,7 +169,7 @@ const ToolTipSettings = ({ buttonSettings: { jsonValue } }: any) => {
                             {jsonValue?.buttonText}
                           </button>
                           <button
-                            style={{ color: fontHexColor }}
+                            style={{ color: fontColor }}
                             className="text-white rounded-sm shadow-md py-1 px-2 bg-transparent border border-[#ccc]"
                           >
                             View Product

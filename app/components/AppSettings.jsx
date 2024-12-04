@@ -55,7 +55,7 @@ const AppSettings = () => {
         </Card>
       </div>
 
-      <div className="mb-8 px-6 py-4 bg-white shadow-md rounded-lg">
+      {/* <div className="mb-8 px-6 py-4 bg-white shadow-md rounded-lg">
         <Card sectioned>
           <Button
             primary
@@ -65,7 +65,7 @@ const AppSettings = () => {
             Save Settings
           </Button>
         </Card>
-      </div>
+      </div> */}
     </Page>
   );
 };

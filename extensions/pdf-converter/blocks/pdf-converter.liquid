@@ -4,18 +4,24 @@
 {{ 'main.css' | asset_url | stylesheet_tag }}
 {% assign pdfMetafields = shop.metafields.PDF %}
 {% assign buttonHotspot = shop.metafields.cartmade['cod_button_settings'] %}
+{% assign tooltipHotspot = shop.metafields.cartmade['cod_tooltip_settings'] %}
 {% assign pdfMetafield = pdfMetafields[block.settings.metafield_key] %}
 {% assign pdfData = pdfMetafield.value | parse_json %}
 {% assign buttonData = buttonHotspot.value | parse_json %}
+{% assign toolTipData = tooltipHotspot.value | parse_json %}
+
 {% assign array_length = pdfData.images | size %}
 {% assign images = pdfData.images %}
 {% assign points = images.points %}
+{{toolTipData}}
+
 {% for image in images %}
 {% assign pageIndex = forloop.index | minus: 1 %}
 {% for point in image.points %}
 {% assign hotSpotIndex = forloop.index %}
 {% comment %} {{point.handle}} {% endcomment %}
-{% render 'tooltip', data_page_index: pageIndex, data_hotspot_index:hotSpotIndex,
+{% render 'tooltip', data_page_index: pageIndex, data_hotspot_index:hotSpotIndex, buttonData:buttonData,
+tooltipData:toolTipData,
 handle:point.handle %}
 {% endfor %}
 {% endfor %}
