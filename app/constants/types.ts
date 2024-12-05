@@ -14,6 +14,8 @@ export interface PDFVALUES {
     id: string;
     pdfName: string;
     frontPage: string;
+    date: string;
+    size: string;
     key: string;
     allImages: {
       id: string;

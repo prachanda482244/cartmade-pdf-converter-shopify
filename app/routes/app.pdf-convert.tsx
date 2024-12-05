@@ -2,7 +2,6 @@ import { ClipboardIcon } from "@shopify/polaris-icons";
 import { ListBulletedIcon } from "@shopify/polaris-icons";
 import { LayoutColumns3Icon } from "@shopify/polaris-icons";
 import {
-  LegacyStack,
   Text,
   Page,
   LegacyCard,
@@ -13,10 +12,9 @@ import {
   Box,
   Grid,
   Icon,
-  Select,
   Button,
 } from "@shopify/polaris";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   json,
   unstable_parseMultipartFormData,
@@ -36,8 +34,6 @@ import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import fs from "fs";
 import { PDFVALUES } from "app/constants/types";
-import { Modal, TitleBar } from "@shopify/app-bridge-react";
-import { progress } from "framer-motion";
 import { useDispatch, useSelector } from "react-redux";
 import { addPlan } from "app/store/slices/planSlice";
 import DeleteModal from "app/components/DeleteModal";
@@ -59,9 +55,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const pdf = formData.get("pdf") as File;
     const pdfName: any = formData.get("pdfName") || pdf?.name || "Untitled PDF";
+    const view = (formData.get("view") as string) || "list";
     if (!pdf) return json({ error: "No file uploaded" }, { status: 400 });
 
     const pdfPath = path.join(process.cwd(), "public", "uploads", pdf.name);
+
+    const pdfStats = fs.statSync(pdfPath);
+    const pdfSizeInBytes = pdfStats.size;
+
+    const pdfSizeInKB = (pdfSizeInBytes / 1024).toFixed(2);
     const imageUrls = await extractImagesFromPDF(pdfPath);
     const readedUrls = [];
 
@@ -162,9 +164,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const metafieldData = {
       namespace: "PDF",
       key: key,
+
       value: JSON.stringify({
         pdfName: pdfName,
-
+        pdfSizeInKB,
+        view,
+        date: new Date().toLocaleDateString(),
         images: metaFieldImage.map((img: string, index: number) => ({
           id: index + 1,
           url: img,
@@ -308,7 +313,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     );
     if (!pdfMetafields.length) {
       console.warn("No PDF metafields found.");
-      return { error: "No PDF metafields found." };
+      return {
+        pdfData: [],
+        pricePlan: pricePlan.recurring_application_charges[0],
+      };
     }
 
     const actualResponse = pdfMetafields.map((pdf: any) => ({
@@ -320,8 +328,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       frontPage:
         pdf.jsonValue.images !== null ? pdf.jsonValue?.images[0]?.url : "",
       allImages: pdf.jsonValue.images !== null ? pdf.jsonValue?.images : [],
+      size: pdf.jsonValue.pdfSizeInKB || "",
+      date: pdf.jsonValue.date || "",
       key: pdf.key,
       namespace: pdf.namespace,
+      view: pdf.jsonValue.view,
     }));
 
     return {
@@ -351,7 +362,7 @@ const PDFConverter = () => {
   const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [uploadCount, setUploadCount] = useState(pdfData ? pdfData.length : 0);
+  const [uploadCount, setUploadCount] = useState(pdfData.length);
 
   const handleCopyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
@@ -407,6 +418,7 @@ const PDFConverter = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    setUploadCount(pdfData.length);
     dispatch(addPlan(loader.pricePlan && loader?.pricePlan?.name));
   }, [loader.pricePlan && loader?.pricePlan.name, pdfData]);
 
@@ -421,6 +433,7 @@ const PDFConverter = () => {
     if (file) {
       const formData = new FormData();
       formData.append("pdf", file);
+      formData.append("buttonView", view);
       fetcher.submit(formData, {
         method: "post",
         encType: "multipart/form-data",
@@ -445,7 +458,7 @@ const PDFConverter = () => {
     });
   const rowMarkup =
     pdfData?.length &&
-    pdfData?.map(({ id, pdfName, frontPage, key }, index) => (
+    pdfData?.map(({ id, pdfName, frontPage, key, date, size }, index) => (
       <IndexTable.Row
         id={id}
         key={id}
@@ -465,8 +478,8 @@ const PDFConverter = () => {
             </div>
           </Text>
         </IndexTable.Cell>
-        <IndexTable.Cell> Jul 20 at 3:46pm</IndexTable.Cell>
-        <IndexTable.Cell>600.65 KB</IndexTable.Cell>
+        <IndexTable.Cell> {date}</IndexTable.Cell>
+        <IndexTable.Cell>{size} KB</IndexTable.Cell>
         <IndexTable.Cell>
           <p
             className="flex items-center gap-2 cursor-pointer"
@@ -542,14 +555,20 @@ const PDFConverter = () => {
           onClick={() => setView("grid")}
         ></Button>
       </div>
-      {loader.error && fetcher.state !== "submitting" && !pdfData ? (
+      {!pdfData.length ? (
         <LegacyCard sectioned>
           <EmptyState
             heading="Manage your Pdfs"
             action={{
               content: "Upload PDF",
               onAction: () => {
-                fileInputRef.current?.click();
+                if (uploadCount >= maxUploads) {
+                  shopify.toast.show(
+                    `You can only upload up to ${maxUploads} PDFs based on your current plan.`,
+                  );
+                } else {
+                  fileInputRef.current?.click();
+                }
               },
             }}
             image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
