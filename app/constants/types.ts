@@ -25,6 +25,12 @@ export interface PDFVALUES {
   }[];
 }
 
+export interface pageInformation {
+  endCursor: string;
+  startCursor: string;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
 export interface Marker {
   pointId: number;
   x: number;

@@ -13,8 +13,10 @@ import {
   Grid,
   Icon,
   Button,
+  Select,
+  Spinner,
 } from "@shopify/polaris";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import {
   json,
   unstable_parseMultipartFormData,
@@ -33,11 +35,12 @@ import {
 import { apiVersion, authenticate } from "app/shopify.server";
 import axios from "axios";
 import fs from "fs";
-import { PDFVALUES } from "app/constants/types";
+import { pageInformation, PDFVALUES } from "app/constants/types";
 import { useDispatch, useSelector } from "react-redux";
 import { addPlan } from "app/store/slices/planSlice";
 import DeleteModal from "app/components/DeleteModal";
 
+let valueToFetch = 2;
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { session, admin } = await authenticate.admin(request);
   const { shop, accessToken } = session;
@@ -263,29 +266,30 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       console.error(error?.body.errors, "Errorsssssssssssss");
       return { message: "something went wrong" };
     }
-  }
-  return json({ error: "Unknown method" }, { status: 400 });
-};
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const {
-    admin,
-    session: { accessToken, shop },
-  } = await authenticate.admin(request);
-
-  const { data: pricePlan } = await axios.get(
-    `https://${shop}/admin/api/${apiVersion}/recurring_application_charges.json        `,
-    {
-      headers: {
-        "X-Shopify-Access-Token": accessToken,
+  } else if (request.method === "put" || request.method === "PUT") {
+    const formData = await request.formData();
+    const afterBefore = formData.get("afterBefore") as "after" | "before";
+    const firstLast = formData.get("firstLast") as "last" | "first";
+    const pageToken = formData.get("pageToken") as string | "";
+    const { data: pricePlan } = await axios.get(
+      `https://${shop}/admin/api/${apiVersion}/recurring_application_charges.json        `,
+      {
+        headers: {
+          "X-Shopify-Access-Token": accessToken,
+        },
       },
-    },
-  );
+    );
 
-  const GET_PDF_QUERY = `
+    const GET_PDF_QUERY = `
     query GetPDFQuery {
       shop {
-        metafields(first: 15, namespace: "PDF") {
+        metafields(${firstLast}: ${valueToFetch} , namespace: "PDF" ${afterBefore}:"${pageToken}") {
+            pageInfo {
+            hasPreviousPage
+            hasNextPage
+            startCursor
+            endCursor
+        }
           edges {
             node {
               id
@@ -300,6 +304,94 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   `;
 
+    try {
+      const data = await admin.graphql(GET_PDF_QUERY);
+
+      if (!data) {
+        console.error("Failed to fetch PDF metafield");
+        return { error: "Failed to fetch PDF metafield." };
+      }
+      const response = await data.json();
+      const pageInfo = response.data.shop.metafields.pageInfo;
+      const pdfMetafields = response.data.shop.metafields.edges.map(
+        (edge: any) => edge.node,
+      );
+      if (!pdfMetafields.length) {
+        console.warn("No PDF metafields found.");
+        return {
+          pdfData: [],
+          pricePlan: pricePlan.recurring_application_charges[0],
+          pageInfo,
+        };
+      }
+
+      const actualResponse = pdfMetafields.map((pdf: any) => ({
+        id: pdf.id.split("/")[pdf.id.split("/").length - 1],
+        pdfName:
+          pdf.jsonValue.pdfName !== null
+            ? pdf.jsonValue?.pdfName
+            : "Untitled Document",
+        frontPage:
+          pdf.jsonValue.images !== null ? pdf.jsonValue?.images[0]?.url : "",
+        allImages: pdf.jsonValue.images !== null ? pdf.jsonValue?.images : [],
+        size: pdf.jsonValue.pdfSizeInKB || "",
+        date: pdf.jsonValue.date || "",
+        key: pdf.key,
+        namespace: pdf.namespace,
+        view: pdf.jsonValue.view,
+      }));
+
+      return {
+        pdfData: actualResponse,
+        pricePlan: pricePlan.recurring_application_charges[0],
+        pageInfo,
+      };
+    } catch (error) {
+      console.error("Error fetching PDF metafields:", error);
+      return { error: "Unexpected error occurred while fetching metafields." };
+    }
+  }
+  return json({ error: "Unknown method" }, { status: 400 });
+};
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const {
+    admin,
+    session: { accessToken, shop },
+  } = await authenticate.admin(request);
+  const { data: pricePlan } = await axios.get(
+    `https://${shop}/admin/api/${apiVersion}/recurring_application_charges.json        `,
+    {
+      headers: {
+        "X-Shopify-Access-Token": accessToken,
+      },
+    },
+  );
+
+  const GET_PDF_QUERY = `
+      query GetPDFQuery {
+        shop {
+          metafields(first: ${valueToFetch}, namespace: "PDF") {
+              pageInfo {
+              hasPreviousPage
+              hasNextPage
+              startCursor
+              endCursor
+          }
+            edges {
+              node {
+                id
+                namespace
+                key
+                jsonValue
+                type
+              }
+            }
+          }
+        }
+      }
+    `;
+
   try {
     const data = await admin.graphql(GET_PDF_QUERY);
 
@@ -308,6 +400,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return { error: "Failed to fetch PDF metafield." };
     }
     const response = await data.json();
+    const pageInfo = response.data.shop.metafields.pageInfo;
     const pdfMetafields = response.data.shop.metafields.edges.map(
       (edge: any) => edge.node,
     );
@@ -316,6 +409,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       return {
         pdfData: [],
         pricePlan: pricePlan.recurring_application_charges[0],
+        pageInfo,
       };
     }
 
@@ -338,6 +432,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return {
       pdfData: actualResponse,
       pricePlan: pricePlan.recurring_application_charges[0],
+      pageInfo,
     };
   } catch (error) {
     console.error("Error fetching PDF metafields:", error);
@@ -347,22 +442,28 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const PDFConverter = () => {
   const loader: any = useLoaderData();
-  const { pdfData } = useLoaderData<PDFVALUES>();
-
-  const fetcher = useFetcher();
-
+  const fetcher = useFetcher<PDFVALUES>();
   const dispatch = useDispatch();
+  const { pageInfo } = fetcher.data || loader;
+  const { pdfData } = fetcher.data || useLoaderData<PDFVALUES>();
+  const [pageInformation, setPageInformation] = useState<pageInformation>({
+    endCursor: "",
+    startCursor: "",
+    hasNextPage: true,
+    hasPreviousPage: false,
+  });
   const plan = useSelector((state: any) => state.plan.plan);
-
   const planType = plan || "Free";
-
   const maxUploads =
     planType === "Free" ? 1 : planType === "Basic" ? 5 : Infinity;
-
-  const [fileUploadTracker, setFileUploadTracker] = useState<boolean>(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [uploadCount, setUploadCount] = useState(pdfData.length);
+  const navigate = useNavigate();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [view, setView] = useState<string>("list");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isPaginationLoading, setIsPaginationLoading] =
+    useState<boolean>(false);
 
   const handleCopyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
@@ -374,53 +475,40 @@ const PDFConverter = () => {
     });
   };
 
+  const handleNextPagination = async () => {
+    setIsPaginationLoading(true);
+
+    const formData = new FormData();
+    formData.append("afterBefore", "after");
+    formData.append("firstLast", "first");
+    formData.append("pageToken", pageInformation.endCursor);
+
+    fetcher.submit(formData, { method: "put" });
+  };
+
+  const handlePrevPagination = async () => {
+    setIsPaginationLoading(true);
+    const formData = new FormData();
+    formData.append("afterBefore", "before");
+    formData.append("firstLast", "last");
+    formData.append("pageToken", pageInformation.startCursor);
+    fetcher.submit(formData, { method: "put" });
+  };
+
   const handlePdfDelete = () => {
     const formData = new FormData();
     formData.append("metafieldIds", JSON.stringify(selectedResources));
     fetcher.submit(formData, { method: "delete" });
     selectedResources.splice(0, selectedResources.length);
-    setFileUploadTracker(false);
   };
-  // const simulateProgress = (fetcherState: string) => {
-  //   let progress = 0;
 
-  //   if (fetcherState === "submitting") {
-  //     progress = 70;
-  //   } else if (fetcherState === "loading") {
-  //     progress = 30;
-  //   } else {
-  //     progress = 0;
-  //   }
-
-  //   const interval = setInterval(() => {
-  //     if (fetcherState === "submitting") {
-  //       progress += 5;
-  //     } else if (fetcherState === "loading") {
-  //       progress += 10;
-  //     } else {
-  //       progress = 0;
-  //     }
-
-  //     if (progress >= 100 || progress < 0) {
-  //       progress = 100;
-  //       clearInterval(interval);
-  //     }
-
-  //     setUploadProgress(progress);
-  //   }, 700);
-  // };
-
-  // useEffect(() => {
-  //   simulateProgress(fetcher.state);
-  // }, []);
-
-  const navigate = useNavigate();
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
   useEffect(() => {
     setUploadCount(pdfData.length);
+    setPageInformation(pageInfo);
+    setIsPaginationLoading(false);
+    setIsLoading(false);
     dispatch(addPlan(loader.pricePlan && loader?.pricePlan?.name));
-  }, [loader.pricePlan && loader?.pricePlan.name, pdfData]);
+  }, [loader.pricePlan && loader?.pricePlan.name, pdfData, pageInfo]);
 
   const handleFileChange = () => {
     if (uploadCount >= maxUploads) {
@@ -431,6 +519,7 @@ const PDFConverter = () => {
     }
     const file = fileInputRef.current?.files?.[0];
     if (file) {
+      setIsLoading(true);
       const formData = new FormData();
       formData.append("pdf", file);
       formData.append("buttonView", view);
@@ -501,18 +590,16 @@ const PDFConverter = () => {
     },
   ];
 
+  shopify.loading(isPaginationLoading);
   const resourceName = {
     singular: "PDF",
     plural: "PDFs",
   };
-
-  const [view, setView] = useState<string>("list");
-
   return (
     <Page
       backAction={{ content: "Settings", url: "/app" }}
       primaryAction={{
-        loading: fetcher.state === "submitting",
+        loading: isLoading,
         content: "Upload PDF",
         onAction: () => {
           if (uploadCount >= maxUploads) {
@@ -544,6 +631,7 @@ const PDFConverter = () => {
       />
 
       <div className=" gap-2 flex items-center justify-end mb-4">
+        {isPaginationLoading ? <Spinner size="small" /> : null}
         <Button
           icon={LayoutColumns3Icon}
           pressed={view === "list"}
@@ -597,8 +685,11 @@ const PDFConverter = () => {
                 { title: "PDF key" },
               ]}
               pagination={{
-                hasNext: true,
-                onNext: () => {},
+                hasNext: pageInformation?.hasNextPage && !isPaginationLoading,
+                hasPrevious:
+                  pageInformation?.hasPreviousPage && !isPaginationLoading,
+                onNext: () => handleNextPagination(),
+                onPrevious: () => handlePrevPagination(),
               }}
             >
               {rowMarkup}
