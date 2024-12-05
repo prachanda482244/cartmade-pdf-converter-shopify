@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://goals-characterized-ye-desktops.trycloudflare.com"
+application_url = "https://ink-travelers-discount-climbing.trycloudflare.com"
 embedded = true
 
 [build]
@@ -20,9 +20,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://goals-characterized-ye-desktops.trycloudflare.com/auth/callback",
-  "https://goals-characterized-ye-desktops.trycloudflare.com/auth/shopify/callback",
-  "https://goals-characterized-ye-desktops.trycloudflare.com/api/auth/callback"
+  "https://ink-travelers-discount-climbing.trycloudflare.com/auth/callback",
+  "https://ink-travelers-discount-climbing.trycloudflare.com/auth/shopify/callback",
+  "https://ink-travelers-discount-climbing.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]

@@ -444,8 +444,12 @@ const PDFConverter = () => {
   const loader: any = useLoaderData();
   const fetcher = useFetcher<PDFVALUES>();
   const dispatch = useDispatch();
-  const { pageInfo } = fetcher.data || loader;
-  const { pdfData } = fetcher.data || useLoaderData<PDFVALUES>();
+  const { pageInfo } = loader || fetcher?.data;
+  const { pdfData } = useLoaderData<PDFVALUES>() || fetcher?.data;
+  console.log(loader, "loader data");
+  console.log(fetcher.data, "fetcher data");
+  console.log(pdfData, "pdfdata data");
+
   const [pageInformation, setPageInformation] = useState<pageInformation>({
     endCursor: "",
     startCursor: "",
@@ -457,7 +461,7 @@ const PDFConverter = () => {
   const maxUploads =
     planType === "Free" ? 1 : planType === "Basic" ? 5 : Infinity;
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
-  const [uploadCount, setUploadCount] = useState(pdfData.length);
+  const [uploadCount, setUploadCount] = useState(pdfData ? pdfData.length : 0);
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [view, setView] = useState<string>("list");
@@ -482,8 +486,8 @@ const PDFConverter = () => {
     formData.append("afterBefore", "after");
     formData.append("firstLast", "first");
     formData.append("pageToken", pageInformation.endCursor);
-
     fetcher.submit(formData, { method: "put" });
+    shopify.loading(isPaginationLoading);
   };
 
   const handlePrevPagination = async () => {
@@ -493,6 +497,7 @@ const PDFConverter = () => {
     formData.append("firstLast", "last");
     formData.append("pageToken", pageInformation.startCursor);
     fetcher.submit(formData, { method: "put" });
+    shopify.loading(isPaginationLoading);
   };
 
   const handlePdfDelete = () => {
@@ -503,7 +508,7 @@ const PDFConverter = () => {
   };
 
   useEffect(() => {
-    setUploadCount(pdfData.length);
+    setUploadCount(pdfData ? pdfData.length : 0);
     setPageInformation(pageInfo);
     setIsPaginationLoading(false);
     setIsLoading(false);
@@ -590,7 +595,6 @@ const PDFConverter = () => {
     },
   ];
 
-  shopify.loading(isPaginationLoading);
   const resourceName = {
     singular: "PDF",
     plural: "PDFs",
@@ -643,7 +647,7 @@ const PDFConverter = () => {
           onClick={() => setView("grid")}
         ></Button>
       </div>
-      {!pdfData.length ? (
+      {!pdfData || !pdfData.length ? (
         <LegacyCard sectioned>
           <EmptyState
             heading="Manage your Pdfs"
