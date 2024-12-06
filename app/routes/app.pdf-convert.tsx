@@ -19,6 +19,7 @@ import {
   Icon,
   Button,
   Spinner,
+  Pagination,
 } from "@shopify/polaris";
 import { useState, useRef, useEffect } from "react";
 import {
@@ -769,66 +770,80 @@ const PDFConverter = () => {
           </Box>
         </div>
       ) : (
-        <Grid>
-          {pdfData?.map(({ id, pdfName, frontPage, key }, index) => (
-            <Grid.Cell
-              columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}
-              key={id}
-            >
-              <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
-                <LegacyCard sectioned>
-                  {/* Card Header */}
-                  <div className="flex justify-between items-center px-6 py-3 border-b border-gray-200">
-                    <p className="text-lg font-semibold text-gray-700">
-                      PDF Details {index + 1}
-                    </p>
-                  </div>
-
-                  {/* Card Body */}
-                  <div className="px-6 py-4">
-                    <div className="flex items-center space-x-4 mb-4">
-                      <div className="flex-shrink-0">
-                        <Thumbnail
-                          alt={pdfName}
-                          source={frontPage}
-                          size="large"
-                        />
-                      </div>
-                      <div className="flex flex-col justify-between w-full">
-                        <span
-                          onClick={() => navigate(`/app/details/${id}`)}
-                          className="text-xl font-semibold text-gray-800 hover:text-blue-600 cursor-pointer truncate"
-                        >
-                          {pdfName.slice(0, 15)}.pdf
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          Uploaded on Jul 20 at 3:46pm
-                        </span>
-                      </div>
+        <>
+          <Grid>
+            {pdfData?.map(({ id, pdfName, frontPage, key }, index) => (
+              <Grid.Cell
+                columnSpan={{ xs: 6, sm: 3, md: 3, lg: 6, xl: 6 }}
+                key={id}
+              >
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300">
+                  <LegacyCard sectioned>
+                    {/* Card Header */}
+                    <div className="flex justify-between items-center px-6 py-3 border-b border-gray-200">
+                      <p className="text-lg font-semibold text-gray-700">
+                        PDF Details {index + 1}
+                      </p>
                     </div>
 
-                    <div className="flex justify-between items-center space-x-4">
-                      {/* File Size */}
-                      <div className="text-sm text-gray-500">Size: 647 KB</div>
-
-                      <div
-                        onClick={() => handleCopyKey(key)}
-                        className="flex  items-center text-sm text-blue-500 w-28 hover:bg-blue-50 px-3 py-1 rounded-md  cursor-pointer"
-                      >
-                        <p className="flex items-center ">
-                          <Icon source={ClipboardIcon} tone="base" />
-                          <span className="font-medium">
-                            {copiedKey === key ? "Copied" : "Copy Key"}
+                    {/* Card Body */}
+                    <div className="px-6 py-4">
+                      <div className="flex items-center space-x-4 mb-4">
+                        <div className="flex-shrink-0">
+                          <Thumbnail
+                            alt={pdfName}
+                            source={frontPage}
+                            size="large"
+                          />
+                        </div>
+                        <div className="flex flex-col justify-between w-full">
+                          <span
+                            onClick={() => navigate(`/app/details/${id}`)}
+                            className="text-xl font-semibold text-gray-800 hover:text-blue-600 cursor-pointer truncate"
+                          >
+                            {pdfName.slice(0, 15)}.pdf
                           </span>
-                        </p>
+                          <span className="text-sm text-gray-500">
+                            Uploaded on Jul 20 at 3:46pm
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center space-x-4">
+                        {/* File Size */}
+                        <div className="text-sm text-gray-500">
+                          Size: 647 KB
+                        </div>
+
+                        <div
+                          onClick={() => handleCopyKey(key)}
+                          className="flex  items-center text-sm text-blue-500 w-28 hover:bg-blue-50 px-3 py-1 rounded-md  cursor-pointer"
+                        >
+                          <p className="flex items-center ">
+                            <Icon source={ClipboardIcon} tone="base" />
+                            <span className="font-medium">
+                              {copiedKey === key ? "Copied" : "Copy Key"}
+                            </span>
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </LegacyCard>
-              </div>
-            </Grid.Cell>
-          ))}
-        </Grid>
+                  </LegacyCard>
+                </div>
+              </Grid.Cell>
+            ))}
+          </Grid>
+          <div className="mt-2">
+            <Pagination
+              hasNext={pageInformation?.hasNextPage && !isPaginationLoading}
+              hasPrevious={
+                pageInformation?.hasPreviousPage && !isPaginationLoading
+              }
+              onNext={handleNextPagination}
+              onPrevious={handlePrevPagination}
+            />
+          </div>
+        </>
       )}
     </Page>
   );

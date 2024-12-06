@@ -2,8 +2,8 @@
 
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "Catalog to Cart -Shoppable PDF"
-handle = "catalog-to-cart-shoppable-pdf"
-application_url = "https://claims-advisor-placed-rob.trycloudflare.com"
+handle = "catalog-to-cart"
+application_url = "https://hampton-replica-reflections-bk.trycloudflare.com"
 embedded = true
 
 [build]
@@ -20,9 +20,9 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://claims-advisor-placed-rob.trycloudflare.com/auth/callback",
-  "https://claims-advisor-placed-rob.trycloudflare.com/auth/shopify/callback",
-  "https://claims-advisor-placed-rob.trycloudflare.com/api/auth/callback"
+  "https://hampton-replica-reflections-bk.trycloudflare.com/auth/callback",
+  "https://hampton-replica-reflections-bk.trycloudflare.com/auth/shopify/callback",
+  "https://hampton-replica-reflections-bk.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
