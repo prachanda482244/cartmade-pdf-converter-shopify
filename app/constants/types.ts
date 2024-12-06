@@ -1,15 +1,9 @@
 import { IconSource } from "@shopify/polaris";
 
-import {
-  XIcon,
-  ClipboardIcon,
-  CollectionIcon,
-  CreditCardIcon,
-  DeliveryIcon,
-  ArrowRightIcon,
-  CartIcon,
-} from "@shopify/polaris-icons";
 export interface PDFVALUES {
+  pageInfo: pageInformation;
+  pricePlan: any;
+  query: string;
   pdfData: {
     id: string;
     pdfName: string;

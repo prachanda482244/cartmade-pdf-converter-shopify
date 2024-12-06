@@ -13,10 +13,9 @@ import {
   Grid,
   Icon,
   Button,
-  Select,
   Spinner,
 } from "@shopify/polaris";
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   json,
   unstable_parseMultipartFormData,
@@ -218,6 +217,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   } else if (request.method === "DELETE" || request.method === "delete") {
     const formData = await request.formData();
     const metafieldIds: any = formData.get("metafieldIds");
+    const query = formData.get("query") as string;
     if (!metafieldIds) {
       return json({ error: "No metafieldId provided" }, { status: 400 });
     }
@@ -251,16 +251,54 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
       const results = await Promise.all(deletePromises);
 
-      results.forEach((response) => {
-        const data = response.json();
+      results.forEach(async (response) => {
+        const data = await response.json();
         if (!data) {
           return json({ error: "Unable to remove metafield" }, { status: 400 });
         }
       });
-      return json({
-        success: true,
-        message: "Metafields deleted successfully",
-      });
+      const data = await admin.graphql(query);
+
+      if (!data) {
+        console.error("Failed to fetch PDF metafield");
+        return { error: "Failed to fetch PDF metafield." };
+      }
+      const response = await data.json();
+      const pageInfo = response.data.shop.metafields.pageInfo;
+      const pdfMetafields = response.data.shop.metafields.edges.map(
+        (edge: any) => edge.node,
+      );
+      if (!pdfMetafields.length) {
+        console.warn("No PDF metafields found.");
+        return {
+          pdfData: [],
+
+          pageInfo,
+          query: query,
+        };
+      }
+
+      const actualResponse = pdfMetafields.map((pdf: any) => ({
+        id: pdf.id.split("/")[pdf.id.split("/").length - 1],
+        pdfName:
+          pdf.jsonValue.pdfName !== null
+            ? pdf.jsonValue?.pdfName
+            : "Untitled Document",
+        frontPage:
+          pdf.jsonValue.images !== null ? pdf.jsonValue?.images[0]?.url : "",
+        allImages: pdf.jsonValue.images !== null ? pdf.jsonValue?.images : [],
+        size: pdf.jsonValue.pdfSizeInKB || "",
+        date: pdf.jsonValue.date || "",
+        key: pdf.key,
+        namespace: pdf.namespace,
+        view: pdf.jsonValue.view,
+      }));
+
+      return {
+        pdfData: actualResponse,
+        pageInfo,
+        query: query,
+      };
     } catch (error: any) {
       console.error(error, "Errors");
       console.error(error?.body.errors, "Errorsssssssssssss");
@@ -283,7 +321,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const GET_PDF_QUERY = `
     query GetPDFQuery {
       shop {
-        metafields(${firstLast}: ${valueToFetch} , namespace: "PDF" ${afterBefore}:"${pageToken}") {
+        metafields(${firstLast}: ${valueToFetch} , reverse:true namespace: "PDF" ${afterBefore}:"${pageToken}") {
             pageInfo {
             hasPreviousPage
             hasNextPage
@@ -322,6 +360,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
           pdfData: [],
           pricePlan: pricePlan.recurring_application_charges[0],
           pageInfo,
+          query: GET_PDF_QUERY,
         };
       }
 
@@ -345,6 +384,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         pdfData: actualResponse,
         pricePlan: pricePlan.recurring_application_charges[0],
         pageInfo,
+        query: GET_PDF_QUERY,
       };
     } catch (error) {
       console.error("Error fetching PDF metafields:", error);
@@ -371,7 +411,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const GET_PDF_QUERY = `
       query GetPDFQuery {
         shop {
-          metafields(first: ${valueToFetch}, namespace: "PDF") {
+          metafields(first: ${valueToFetch}, namespace: "PDF" reverse:true) {
               pageInfo {
               hasPreviousPage
               hasNextPage
@@ -410,6 +450,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         pdfData: [],
         pricePlan: pricePlan.recurring_application_charges[0],
         pageInfo,
+        query: GET_PDF_QUERY,
       };
     }
 
@@ -433,6 +474,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       pdfData: actualResponse,
       pricePlan: pricePlan.recurring_application_charges[0],
       pageInfo,
+      query: GET_PDF_QUERY,
     };
   } catch (error) {
     console.error("Error fetching PDF metafields:", error);
@@ -441,14 +483,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 const PDFConverter = () => {
-  const loader: any = useLoaderData();
+  const loader = useLoaderData<PDFVALUES>();
   const fetcher = useFetcher<PDFVALUES>();
   const dispatch = useDispatch();
-  const { pageInfo } = loader || fetcher?.data;
-  const { pdfData } = useLoaderData<PDFVALUES>() || fetcher?.data;
-  console.log(loader, "loader data");
-  console.log(fetcher.data, "fetcher data");
-  console.log(pdfData, "pdfdata data");
+  const { pageInfo } = fetcher.data?.pageInfo ? fetcher.data : loader;
+
+  const { pdfData } =
+    fetcher.data?.pdfData && fetcher.data.pdfData.length
+      ? fetcher.data
+      : loader;
+  const { query } = fetcher.data?.query ? fetcher.data : loader;
 
   const [pageInformation, setPageInformation] = useState<pageInformation>({
     endCursor: "",
@@ -503,6 +547,7 @@ const PDFConverter = () => {
   const handlePdfDelete = () => {
     const formData = new FormData();
     formData.append("metafieldIds", JSON.stringify(selectedResources));
+    formData.append("query", query);
     fetcher.submit(formData, { method: "delete" });
     selectedResources.splice(0, selectedResources.length);
   };
