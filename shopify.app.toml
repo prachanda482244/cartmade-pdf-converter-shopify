@@ -3,7 +3,7 @@
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
 name = "PDF-CONVERTER"
 handle = "pdf-converter"
-application_url = "https://show-auto-triumph-jill.trycloudflare.com"
+application_url = "https://kerry-enjoy-requirements-sealed.trycloudflare.com"
 embedded = true
 
 [build]
@@ -20,17 +20,17 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://show-auto-triumph-jill.trycloudflare.com/auth/callback",
-  "https://show-auto-triumph-jill.trycloudflare.com/auth/shopify/callback",
-  "https://show-auto-triumph-jill.trycloudflare.com/api/auth/callback"
+  "https://kerry-enjoy-requirements-sealed.trycloudflare.com/auth/callback",
+  "https://kerry-enjoy-requirements-sealed.trycloudflare.com/auth/shopify/callback",
+  "https://kerry-enjoy-requirements-sealed.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
   [[webhooks.subscriptions]]
-  topics = [ "app/uninstalled" ]
-  uri = "/webhooks/app/uninstalled"
+  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+  uri="https://pdf-converter-app-dc3cc08a6d4f.herokuapp.com/webhooks"
 
 [pos]
 embedded = false

@@ -2,7 +2,7 @@ const LivePreview = () => {
   return (
     <div
       style={{
-        marginBottom: "15px",
+        marginBottom: "12px",
         fontSize: "18px",
         fontWeight: "bold",
       }}

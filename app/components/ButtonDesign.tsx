@@ -77,8 +77,8 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
   }
 
   return (
-    <div className="space-y-6 p-8 bg-gray-50 rounded-lg shadow-lg">
-      <p className="flex font-bold text-lg items-center justify-between">
+    <div className="space-y-2 p-8 bg-gray-50 rounded-lg shadow-lg">
+      <p className="flex font-bold  text-lg items-center justify-between">
         Hotspot settings
         <Button
           variant="primary"
@@ -88,52 +88,56 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
           Save
         </Button>
       </p>
+      <h2 className="font-bold pt-3 ">Customize the Hotspot button</h2>
+
       <div className="w-full  flex">
-        <div className="w-1/2 h-full">
-          <h2 className="font-bold py-2 ">Customize the Hotspot button</h2>
-          <div className="mt-2">
+        <div className="w-1/2">
+          <div>
             <Card>
-              <p className="font-light">
+              <p className="font-light min-h-20">
                 <span className="font-semibold">
                   {" "}
                   This is the button that your customers will click to view the
                   information of the product.
                 </span>{" "}
-                Customize here the text and design of your button to fit it with
-                your brand style. The button will use the same font of your
-                store when it will be generated on your store.
+                Customize here the design of your hotspot button to fit it with
+                your brand style.
               </p>
             </Card>
           </div>
         </div>
-        <div className="w-1/2 mt-[43px] ml-2 h-full">
+        <div className="w-1/2 ml-2 h-full">
           <Card>
-            <BlockStack align="center">
-              <LivePreview />
-              <div className="flex items-center justify-between">
-                <InputColorPicker
-                  title="Hotspot Color"
-                  flag="hotspot"
-                  setState={setHotspotColor}
-                  value={hotspotColor}
-                />
-                <div
-                  className="image-hotspots--pin   text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
-                  style={{
-                    backgroundColor: hotspotColor,
-                    transform: "unset !important",
-                  }}
-                >
-                  <HotspotButton />
+            <div className="min-h-20">
+              <BlockStack align="center">
+                <LivePreview />
+                <div className="flex items-center justify-between">
+                  <InputColorPicker
+                    title="Hotspot Color"
+                    flag="hotspot"
+                    setState={setHotspotColor}
+                    value={hotspotColor}
+                  />
+                  <div
+                    className="image-hotspots--pin   text-white text-sm h-9 w-9 rounded-full shadow-lg cursor-pointer animate-pulse"
+                    style={{
+                      backgroundColor: hotspotColor,
+                      transform: "unset !important",
+                    }}
+                  >
+                    <HotspotButton />
+                  </div>
                 </div>
-              </div>
-            </BlockStack>
+              </BlockStack>
+            </div>
           </Card>
         </div>
       </div>
 
       {/* Button Preview */}
-      <div className="">
+      <div className=" pt-6">
+        <h2 className="text-lg font-bold mb-2">Button Settings</h2>
+
         <h2 className="font-bold py-2 ">Customize the Add to cart button</h2>
         <div className="mb-4">
           <Card roundedAbove="lg">
@@ -149,8 +153,6 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
             </p>
           </Card>
         </div>
-        <h2 className="text-lg font-bold">Button Settings</h2>
-
         <Card>
           <div className="button-settings-wrapper flex flex-wrap gap-4">
             <div className="flex border-0  sm:border-r-2 sm:pr-4 flex-col gap-3 button-settings-item">
@@ -186,7 +188,7 @@ const ButtonDesign = ({ buttonSettings: { jsonValue } }: any) => {
                 value={borderColor}
               />
 
-              <div className=" flex max-w-[256px] flex-col gap-3">
+              <div className=" flex max-w-[256px] flex-col gap-5">
                 <RangeSlider
                   label="Font size"
                   value={fontSize}

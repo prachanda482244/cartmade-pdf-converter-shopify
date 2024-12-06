@@ -29,9 +29,6 @@ export default function App() {
           <Link to="/app/pdf-convert">Catalog listing</Link>
           <Link to="/app/global-settings">Global settings</Link>
           <Link to="/app/subscription">Plans</Link>
-          {/* <Link to="/app/framer-motion">Framer motion</Link> */}
-          {/* <Link to="/app/pageflip">Page flip</Link> */}
-          {/* <Link to="/app/additional">Additional page</Link> */}
         </NavMenu>
         <Outlet />
       </Provider>
