@@ -18,16 +18,14 @@ const AppSettings = () => {
     <Page title="App Settings" fullWidth>
       <div className="mb-8 px-6 py-4 bg-white shadow-md rounded-lg">
         <Card sectioned>
-          <TextContainer>
-            <h2 className="text-2xl font-semibold text-gray-800 mb-4">
-              PDF Converter App Settings
-            </h2>
-            <p className="text-gray-600">
-              This app allows you to upload PDF files, convert them into
-              high-quality images, and enable a point-based system for cart
-              functionality. You can toggle the app on/off below.
-            </p>
-          </TextContainer>
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4">
+            PDF Converter App Settings
+          </h2>
+          <p className="text-gray-600">
+            This app allows you to upload PDF files, convert them into
+            high-quality images, and enable a point-based system for cart
+            functionality. You can toggle the app on/off below.
+          </p>
         </Card>
       </div>
 

@@ -1,4 +1,9 @@
-import { ClipboardIcon } from "@shopify/polaris-icons";
+import {
+  AppsFilledIcon,
+  ClipboardIcon,
+  MenuIcon,
+  MenuVerticalIcon,
+} from "@shopify/polaris-icons";
 import { ListBulletedIcon } from "@shopify/polaris-icons";
 import { LayoutColumns3Icon } from "@shopify/polaris-icons";
 import {
@@ -512,6 +517,7 @@ const PDFConverter = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isPaginationLoading, setIsPaginationLoading] =
     useState<boolean>(false);
+  const [modalActive, setModalActive] = useState(false);
 
   const handleCopyKey = (key: string) => {
     navigator.clipboard.writeText(key).then(() => {
@@ -531,7 +537,6 @@ const PDFConverter = () => {
     formData.append("firstLast", "first");
     formData.append("pageToken", pageInformation.endCursor);
     fetcher.submit(formData, { method: "put" });
-    shopify.loading(isPaginationLoading);
   };
 
   const handlePrevPagination = async () => {
@@ -541,7 +546,6 @@ const PDFConverter = () => {
     formData.append("firstLast", "last");
     formData.append("pageToken", pageInformation.startCursor);
     fetcher.submit(formData, { method: "put" });
-    shopify.loading(isPaginationLoading);
   };
 
   const handlePdfDelete = () => {
@@ -581,7 +585,12 @@ const PDFConverter = () => {
       fileInputRef.current.value = "";
     }
   };
-  const [modalActive, setModalActive] = useState(false);
+
+  if (isPaginationLoading) {
+    shopify.loading(isPaginationLoading);
+  }
+
+  // typeof shopify != "undefined" && shopify.loading(isPaginationLoading);
 
   const handleModalOpen = () => {
     setModalActive(true);
@@ -647,6 +656,26 @@ const PDFConverter = () => {
   return (
     <Page
       backAction={{ content: "Settings", url: "/app" }}
+      actionGroups={[
+        {
+          title: view.toUpperCase(),
+          icon: AppsFilledIcon,
+          actions: [
+            {
+              content: "List",
+              icon: LayoutColumns3Icon,
+              onAction: () => setView("list"),
+              active: view === "list",
+            },
+            {
+              content: "Grid",
+              icon: ListBulletedIcon,
+              onAction: () => setView("grid"),
+              active: view === "grid",
+            },
+          ],
+        },
+      ]}
       primaryAction={{
         loading: isLoading,
         content: "Upload PDF",
@@ -679,19 +708,6 @@ const PDFConverter = () => {
         onDelete={handlePdfDelete}
       />
 
-      <div className=" gap-2 flex items-center justify-end mb-4">
-        {isPaginationLoading ? <Spinner size="small" /> : null}
-        <Button
-          icon={LayoutColumns3Icon}
-          pressed={view === "list"}
-          onClick={() => setView("list")}
-        ></Button>
-        <Button
-          pressed={view === "grid"}
-          icon={ListBulletedIcon}
-          onClick={() => setView("grid")}
-        ></Button>
-      </div>
       {!pdfData || !pdfData.length ? (
         <LegacyCard sectioned>
           <EmptyState
@@ -717,34 +733,41 @@ const PDFConverter = () => {
           </EmptyState>
         </LegacyCard>
       ) : view === "list" ? (
-        <Box paddingBlockEnd="400">
-          <LegacyCard>
-            <IndexTable
-              resourceName={resourceName}
-              itemCount={pdfData?.length || 0}
-              selectedItemsCount={
-                allResourcesSelected ? "All" : selectedResources?.length
-              }
-              promotedBulkActions={promotedBulkActions}
-              onSelectionChange={handleSelectionChange}
-              headings={[
-                { title: "File Name" },
-                { title: "Date" },
-                { title: "Size" },
-                { title: "PDF key" },
-              ]}
-              pagination={{
-                hasNext: pageInformation?.hasNextPage && !isPaginationLoading,
-                hasPrevious:
-                  pageInformation?.hasPreviousPage && !isPaginationLoading,
-                onNext: () => handleNextPagination(),
-                onPrevious: () => handlePrevPagination(),
-              }}
-            >
-              {rowMarkup}
-            </IndexTable>
-          </LegacyCard>
-        </Box>
+        <div className="relative">
+          <Box paddingBlockEnd="400">
+            {isPaginationLoading ? (
+              <div className=" absolute z-[999] right-2 top-2">
+                <Spinner size="small" />
+              </div>
+            ) : null}
+            <LegacyCard>
+              <IndexTable
+                resourceName={resourceName}
+                itemCount={pdfData?.length || 0}
+                selectedItemsCount={
+                  allResourcesSelected ? "All" : selectedResources?.length
+                }
+                promotedBulkActions={promotedBulkActions}
+                onSelectionChange={handleSelectionChange}
+                headings={[
+                  { title: "File Name" },
+                  { title: "Date" },
+                  { title: "Size" },
+                  { title: "PDF key" },
+                ]}
+                pagination={{
+                  hasNext: pageInformation?.hasNextPage && !isPaginationLoading,
+                  hasPrevious:
+                    pageInformation?.hasPreviousPage && !isPaginationLoading,
+                  onNext: () => handleNextPagination(),
+                  onPrevious: () => handlePrevPagination(),
+                }}
+              >
+                {rowMarkup}
+              </IndexTable>
+            </LegacyCard>
+          </Box>
+        </div>
       ) : (
         <Grid>
           {pdfData?.map(({ id, pdfName, frontPage, key }, index) => (
