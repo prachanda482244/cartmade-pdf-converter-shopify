@@ -633,7 +633,7 @@ const PDFConverter = () => {
             className="flex items-center gap-2 cursor-pointer"
             onClick={() => handleCopyKey(key)}
           >
-            <span className="p-1 relative px-2 shadow-md text-xs text-blue-500 rounded-md cursor-pointer hover:bg-blue-100 capitalize transition-colors">
+            <span className="p-1 relative px-2 shadow-md text-xs text-black rounded-md cursor-pointer hover:bg-black hover:text-white capitalize transition-colors">
               {copiedKey === key ? "copied" : "copy key "}
             </span>
           </p>

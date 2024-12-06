@@ -1,9 +1,9 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "bd4502bb29e6f7490f7fd7773bc0984c"
-name = "PDF-CONVERTER"
-handle = "pdf-converter"
-application_url = "https://kerry-enjoy-requirements-sealed.trycloudflare.com"
+name = "Catalog to Cart -Shoppable PDF"
+handle = "catalog-to-cart-shoppable-pdf"
+application_url = "https://claims-advisor-placed-rob.trycloudflare.com"
 embedded = true
 
 [build]
@@ -20,17 +20,17 @@ scopes = "write_files,read_files,write_themes"
 
 [auth]
 redirect_urls = [
-  "https://kerry-enjoy-requirements-sealed.trycloudflare.com/auth/callback",
-  "https://kerry-enjoy-requirements-sealed.trycloudflare.com/auth/shopify/callback",
-  "https://kerry-enjoy-requirements-sealed.trycloudflare.com/api/auth/callback"
+  "https://claims-advisor-placed-rob.trycloudflare.com/auth/callback",
+  "https://claims-advisor-placed-rob.trycloudflare.com/auth/shopify/callback",
+  "https://claims-advisor-placed-rob.trycloudflare.com/api/auth/callback"
 ]
 
 [webhooks]
 api_version = "2024-07"
 
   [[webhooks.subscriptions]]
-  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
-  uri="https://pdf-converter-app-dc3cc08a6d4f.herokuapp.com/webhooks"
+  compliance_topics = [ "customers/data_request", "customers/redact", "shop/redact" ]
+  uri = "https://pdf-converter-app-dc3cc08a6d4f.herokuapp.com/webhooks"
 
 [pos]
 embedded = false
