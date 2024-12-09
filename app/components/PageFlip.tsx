@@ -226,7 +226,6 @@ const PageFlip = ({
           onAction: handleSave,
           loading: fetcher.state === "submitting",
         }}
-        secondaryActions={<Button variant="secondary"> Settings</Button>}
         fullWidth
       >
         <Layout>
